@@ -21,7 +21,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus1 - wire1() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for ESP32 I2C
+#define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for MD25 H-Bridge
 #define I2C_bus1_SDA 17 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 1
 #define I2C_bus1_SCL 21 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 1
 
@@ -36,15 +36,26 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define MD25 registers 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define CMD                 (byte)0x00                        // Values of 0 eing sent using write have to be cast as a byte to stop them being misinterperted as NULL
-                                                              // This is a but with arduino 1
+#define CMD                 (byte) 0x00                        // Command register. Cast as a byte to stop 
+                                                              // them being misinterperted as NULL. This is a bug with arduino 1
 #define SOFTWAREREG         0x0D                              // Byte to read the software version
-#define SPEED1              (byte)0x00                        // Byte to send speed to first motor
+#define SPEED1              (byte) 0x00                        // Byte to send speed to first motor
 #define SPEED2              0x01                              // Byte to send speed to second motor
 #define ENCODERONE          0x02                              // Byte to read motor encoder 1
 #define ENCODERTWO          0x06                              // Byte to read motor encoder 2
 #define VOLTREAD            0x0A                              // Byte to read battery volts
 #define RESETENCODERS       0x20
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @brief Global control variables  
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool printHeaders = true;
+
+long currentCnt1; 
+long prevCnt1 = 0;
+long errFilter = 100;
+long successCount1 = 0;
+long failCount1 = 0;
 
 /*************************************************************************************************************************************
  * @brief Identify a device based on its I2C address
@@ -153,6 +164,79 @@ byte getMD25FirmwareVersion()
 } //getMD25FirmwareVersion()
 
 /** 
+ * @brief This function resets the encoder values to 0
+=================================================================================================== */
+void encodeReset()
+{                                       
+  Wire.beginTransmission(MD25ADDRESS);
+  Wire.write(CMD);
+  Wire.write(0x20); // Putting the value 0x20 to reset encoders
+  Wire.endTransmission(); 
+} //encodeReset()
+
+/** 
+ * @brief Function to reads the value of encoder 1 as a long
+=================================================================================================== */
+long encoder1()
+{                                            
+  Wire.beginTransmission(MD25ADDRESS); // Send byte to get a reading from encoder 1
+  Wire.write(ENCODERONE);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
+  while(Wire.available() < 4); // Wait for 4 bytes to arrive
+  long poss1 = Wire.read(); // First byte for encoder 1, HH.
+  poss1 <<= 8;
+  poss1 += Wire.read(); // Second byte for encoder 1, HL
+  poss1 <<= 8;
+  poss1 += Wire.read(); // Third byte for encoder 1, LH
+  poss1 <<= 8;
+  poss1 +=Wire.read(); // Fourth byte for encoder 1, LL
+
+  delay(50); // Wait for everything to make sure everything is sent  
+  return(poss1);
+} //encoder1()
+
+/** 
+ * @brief Function to reads the value of encoder 2 as a long
+=================================================================================================== */
+long encoder2()
+{                                            
+  Wire.beginTransmission(MD25ADDRESS);           
+  Wire.write(ENCODERTWO);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
+  while(Wire.available() < 4); // Wait for 4 bytes to become available
+  long poss2 = Wire.read();
+  poss2 <<= 8;
+  poss2 += Wire.read();                
+  poss2 <<= 8;
+  poss2 += Wire.read();                
+  poss2 <<= 8;
+  poss2 +=Wire.read();               
+  
+  delay(50); // Wait to make sure everything is sent   
+  return(poss2);
+} //encoder2()
+
+/** 
+ * @brief Function to stop motors
+=================================================================================================== */
+void stopMotor()
+{                                       
+  Wire.beginTransmission(MD25ADDRESS);
+  Wire.write(SPEED2);
+  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+  Wire.endTransmission();
+  
+  Wire.beginTransmission(MD25ADDRESS);
+  Wire.write(SPEED1);
+  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+  Wire.endTransmission();
+}  //stopMotor()
+
+/** 
  * @brief Standard set up routine for Arduino programs 
 =================================================================================================== */
 void setup()
@@ -167,6 +251,11 @@ void setup()
     byte softVer = getMD25FirmwareVersion(); // Gets the software version of MD25
     Serial.print("<setup> MD25 firmware version is ");
     Serial.println(softVer, HEX);
+    encodeReset();
+    Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+    Wire.write(SPEED1); // Indicate motor1 speed register
+    Wire.write(1); //                                            
+    Wire.endTransmission(); // End transmit
     Serial.println("<setup> End of setup");
 } //setup()
 
@@ -175,4 +264,91 @@ void setup()
 =================================================================================================== */
 void loop()
 {
+//  long currentCnt1; 
+//  long prevCnt1 = 0;
+//  long errFilter = 100;
+//  long successCount1 = 0;
+//  long failCount1 = 0;
+
+if(printHeaders == true)
+{
+  Serial.println("<loop> currO \t prevO \t Filter \t Succ \t Fail \t Pcnt"); // Headings for output
+  printHeaders = false;
+} //if
+// byte x = 150; // Put a value of 255 in x, this will dive motors forward at full speed
+// byte x = 255; // Put a value of 255 in x, this will dive motors forward at full speed
+// do // Start loop to drive motors forward
+// {
+//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 2 at speed value stored in x
+//    Wire.write(SPEED2);
+//    Wire.write(x);                                           
+//    Wire.endTransmission();
+  
+//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 1 at speed value stored in x
+//    Wire.write(SPEED1);
+//    Wire.write(x);
+//    Wire.endTransmission();
+ 
+//    encoder1(); // Calls a function that reads and displays value of encoder 1 to LCD03
+//    encoder2(); // Calls a function that reads and displays value of encoder 2 to LCD03
+// } while(encoder1() < 500); // Loop untill encoder 1 is 5000 or more
+  currentCnt1 = encoder1();
+  if(currentCnt1 < prevCnt1 + errFilter) // If there is a large jump in the counter
+  {
+    prevCnt1 = currentCnt1;
+    successCount1 ++;
+  } //if
+  else
+  {
+    failCount1 ++;
+    Serial.print("<loop> ");
+    Serial.print(currentCnt1);
+    Serial.print("\t ");
+    Serial.print(prevCnt1);
+    Serial.print("\t ");
+    Serial.print(errFilter);
+    Serial.print("\t ");
+    Serial.print(successCount1);
+    Serial.print("\t ");
+    Serial.println(failCount1);
+//    Serial.println(" | ");
+//    u_long percent = failCount1 / successCount1 * 100; 
+  //  long percent = (failCount1 * 100) / (successCount1 * 100); 
+//    Serial.println(percent);
+
+//    Serial.print("<loop> Current encoder1 count of ");
+//    Serial.print(currentCnt1);
+//    Serial.print(" exceeds previous encoder1 count of ");
+//    Serial.print(prevCnt1);
+//    Serial.print(" by more than the filter limit of ");
+//    Serial.print(errFilter);
+//    Serial.println(". Discarding this reading as an error.");
+  } //else
+  
+
+//  long cnt2 = encoder2();
+//  Serial.print("<loop> encoder1 = ");
+//  Serial.println(cnt1);
+
+// stopMotor(); // Calls function to stop motors
+// delay(1000); 
+
+// x = 0; // Put a value of 0 in x, this will drive motors at full reverse speed
+// do // Start loop to drive motors reverse
+// {                                                        
+//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 2 at speed value stored in x
+//    Wire.write(SPEED2);
+//    Wire.write(x);
+//    Wire.endTransmission();
+  
+//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 1 at speed value stored in x
+//    Wire.write(SPEED1);
+//    Wire.write(x);
+//    Wire.endTransmission();
+  
+//    encoder1(); // Calls a function that reads and displays value of encoder 1 to LCD03
+//    encoder2(); // Calls a function that reads and displays value of encoder 2 to LCD03
+//  } while(encoder1() > 0); // Loop untill encoder 1 is 0 or less 
+//  stopMotor(); // Calls function to stop motors
+//  delay(1000);
 } //loop()
