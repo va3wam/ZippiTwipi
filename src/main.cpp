@@ -36,15 +36,15 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define MD25 registers 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define CMD                 (byte) 0x00                        // Command register. Cast as a byte to stop 
-                                                              // them being misinterperted as NULL. This is a bug with arduino 1
-#define SOFTWAREREG         0x0D                              // Byte to read the software version
-#define SPEED1              (byte) 0x00                        // Byte to send speed to first motor
-#define SPEED2              0x01                              // Byte to send speed to second motor
-#define ENCODERONE          0x02                              // Byte to read motor encoder 1
-#define ENCODERTWO          0x06                              // Byte to read motor encoder 2
-#define VOLTREAD            0x0A                              // Byte to read battery volts
-#define RESETENCODERS       0x20
+#define CMD (byte) 0x00 // Command register. Cast as a byte to stop 
+                        // them being misinterperted as NULL. This is a bug with arduino 1
+#define SOFTWAREREG 0x0D // Byte to read the software version
+#define SPEED1 (byte) 0x00 // Byte to send speed to first motor
+#define SPEED2 0x01 // Byte to send speed to second motor
+#define ENCODERONE 0x02 // Byte to read motor encoder 1
+#define ENCODERTWO 0x06 // Byte to read motor encoder 2
+#define VOLTREAD 0x0A // Byte to read battery volts
+#define RESETENCODERS 0x20
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Global control variables  
@@ -56,6 +56,8 @@ long prevCnt1 = 0;
 long errFilter = 100;
 long successCount1 = 0;
 long failCount1 = 0;
+long totalCount1 = 0;
+long percentage1 = 0;
 
 /*************************************************************************************************************************************
  * @brief Identify a device based on its I2C address
@@ -254,44 +256,21 @@ void setup()
     encodeReset();
     Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
     Wire.write(SPEED1); // Indicate motor1 speed register
-    Wire.write(1); //                                            
+    Wire.write(20); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
     Wire.endTransmission(); // End transmit
     Serial.println("<setup> End of setup");
 } //setup()
 
 /**
- * @brief Standard looping routine for Arduino programs
+ * @brief Run motor test code
 =================================================================================================== */
-void loop()
+void motorTest()
 {
-//  long currentCnt1; 
-//  long prevCnt1 = 0;
-//  long errFilter = 100;
-//  long successCount1 = 0;
-//  long failCount1 = 0;
-
-if(printHeaders == true)
-{
-  Serial.println("<loop> currO \t prevO \t Filter \t Succ \t Fail \t Pcnt"); // Headings for output
-  printHeaders = false;
-} //if
-// byte x = 150; // Put a value of 255 in x, this will dive motors forward at full speed
-// byte x = 255; // Put a value of 255 in x, this will dive motors forward at full speed
-// do // Start loop to drive motors forward
-// {
-//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 2 at speed value stored in x
-//    Wire.write(SPEED2);
-//    Wire.write(x);                                           
-//    Wire.endTransmission();
-  
-//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 1 at speed value stored in x
-//    Wire.write(SPEED1);
-//    Wire.write(x);
-//    Wire.endTransmission();
- 
-//    encoder1(); // Calls a function that reads and displays value of encoder 1 to LCD03
-//    encoder2(); // Calls a function that reads and displays value of encoder 2 to LCD03
-// } while(encoder1() < 500); // Loop untill encoder 1 is 5000 or more
+  if(printHeaders == true)
+  {
+    Serial.println("<loop> curr count , prev count , Filter , Succ , Fail , percent"); // Headings for output
+    printHeaders = false;
+  } //if
   currentCnt1 = encoder1();
   if(currentCnt1 < prevCnt1 + errFilter) // If there is a large jump in the counter
   {
@@ -301,54 +280,28 @@ if(printHeaders == true)
   else
   {
     failCount1 ++;
+    totalCount1 = successCount1 + failCount1;
+    percentage1 = failCount1 / successCount1;
     Serial.print("<loop> ");
     Serial.print(currentCnt1);
-    Serial.print("\t ");
+    Serial.print(",");
     Serial.print(prevCnt1);
-    Serial.print("\t ");
+    Serial.print(",");
     Serial.print(errFilter);
-    Serial.print("\t ");
+    Serial.print(",");
     Serial.print(successCount1);
-    Serial.print("\t ");
-    Serial.println(failCount1);
-//    Serial.println(" | ");
-//    u_long percent = failCount1 / successCount1 * 100; 
-  //  long percent = (failCount1 * 100) / (successCount1 * 100); 
-//    Serial.println(percent);
-
-//    Serial.print("<loop> Current encoder1 count of ");
-//    Serial.print(currentCnt1);
-//    Serial.print(" exceeds previous encoder1 count of ");
-//    Serial.print(prevCnt1);
-//    Serial.print(" by more than the filter limit of ");
-//    Serial.print(errFilter);
-//    Serial.println(". Discarding this reading as an error.");
+    Serial.print(",");
+    Serial.print(failCount1);
+    Serial.print(", ");
+    Serial.println(percentage1);
   } //else
-  
+} // motorTest()
 
-//  long cnt2 = encoder2();
-//  Serial.print("<loop> encoder1 = ");
-//  Serial.println(cnt1);
-
-// stopMotor(); // Calls function to stop motors
-// delay(1000); 
-
-// x = 0; // Put a value of 0 in x, this will drive motors at full reverse speed
-// do // Start loop to drive motors reverse
-// {                                                        
-//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 2 at speed value stored in x
-//    Wire.write(SPEED2);
-//    Wire.write(x);
-//    Wire.endTransmission();
+/**
+ * @brief Standard looping routine for Arduino programs
+=================================================================================================== */
+void loop()
+{
+//  motorTest();
   
-//    Wire.beginTransmission(MD25ADDRESS); // Drive motor 1 at speed value stored in x
-//    Wire.write(SPEED1);
-//    Wire.write(x);
-//    Wire.endTransmission();
-  
-//    encoder1(); // Calls a function that reads and displays value of encoder 1 to LCD03
-//    encoder2(); // Calls a function that reads and displays value of encoder 2 to LCD03
-//  } while(encoder1() > 0); // Loop untill encoder 1 is 0 or less 
-//  stopMotor(); // Calls function to stop motors
-//  delay(1000);
 } //loop()
