@@ -6,24 +6,26 @@
  * @copyright Copyright (c) 2020
  * YYYY-MM-DD Dev    Description
  * ---------- ------ -----------------------------------------------------------------------------------------------------------------
+ * 2020-11-23 va3wam Added include of development board pin definition file
  * 2020-10-22 va3wam Program created
  *************************************************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial IIC communication. Comes with Platform.io 
+#include <zippiTwipi_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus0 - wire() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define I2C_bus0_speed 400000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for ESP32 I2C
-#define I2C_bus0_SDA 22 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 0
-#define I2C_bus0_SCL 14 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 0
+//#define I2C_bus0_SDA 22 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 0
+//#define I2C_bus0_SCL 14 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 0
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus1 - wire1() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for MD25 H-Bridge
-#define I2C_bus1_SDA 17 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 1
-#define I2C_bus1_SCL 21 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 1
+//#define I2C_bus1_SDA 17 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 1
+//#define I2C_bus1_SCL 21 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 1
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C device addresses 
