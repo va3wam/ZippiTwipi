@@ -17,15 +17,11 @@
 /// @brief Define I2C bus0 - wire() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define I2C_bus0_speed 400000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for ESP32 I2C
-//#define I2C_bus0_SDA 22 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 0
-//#define I2C_bus0_SCL 14 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 0
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus1 - wire1() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for MD25 H-Bridge
-//#define I2C_bus1_SDA 17 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 1
-//#define I2C_bus1_SCL 21 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 1
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C device addresses 
@@ -47,6 +43,24 @@
 #define ENCODERTWO 0x06 // Byte to read motor encoder 2
 #define VOLTREAD 0x0A // Byte to read battery volts
 #define RESETENCODERS 0x20
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @brief Define structure and variables for reset buttons built-in LEDs. 
+/// @ref https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct
+{
+  int pwmChannel; // There are 16 PWM channels available. Choose any channel between 0 and 15.
+  int pwmFrequency; // Frequency of the digital signal
+  int pwmResolution; // ESP32 boards support PWM resolution between 1 bit to 16 bits. The optimal resolution is 8 bit.
+  int pwmDutyCycle; // Up time of the PWM signal. Ranges from 0-255. 127 is a 50% duty cycle for example.
+  int gpioPin; // GPIO pin connected to the LED  
+}resetButtonLED; 
+resetButtonLED redResetLED = {2, 5000, 8, 0, resetRedLED}; // Chan 2, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), red LED pin 
+resetButtonLED blueResetLED = {1, 5000, 8, 0, resetBlueLED}; // Chan 1, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), blue LED pin
+resetButtonLED greenResetLED = {0, 5000, 8, 0, resetGreenLED}; // Chan 0, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), green LED pin
+int fadeAmount = 5; // How much to fade the LEDs by each loop
+int brightness = 0; // How bright the LED is
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Global control variables  
@@ -240,29 +254,6 @@ void stopMotor()
   Wire.endTransmission();
 }  //stopMotor()
 
-/** 
- * @brief Standard set up routine for Arduino programs 
-=================================================================================================== */
-void setup()
-{
-    Serial.begin(115200); // Open a serial connection at 115200bps
-    while (!Serial) ;     // Wait for Serial port to be ready
-    Serial.println("<setup> Start of setup");
-    Wire.begin(I2C_bus0_SDA,I2C_bus0_SCL,I2C_bus0_speed);
-    scanBus0();
-    Wire1.begin(I2C_bus1_SDA,I2C_bus1_SCL,I2C_bus1_speed);
-    scanBus1();
-    byte softVer = getMD25FirmwareVersion(); // Gets the software version of MD25
-    Serial.print("<setup> MD25 firmware version is ");
-    Serial.println(softVer, HEX);
-    encodeReset();
-    Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-    Wire.write(SPEED1); // Indicate motor1 speed register
-    Wire.write(20); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-    Wire.endTransmission(); // End transmit
-    Serial.println("<setup> End of setup");
-} //setup()
-
 /**
  * @brief Run motor test code
 =================================================================================================== */
@@ -300,10 +291,101 @@ void motorTest()
 } // motorTest()
 
 /**
+ * @brief Check the limit switches moounted at the front and back of the robot to see if it has
+ * lost its balance
+=================================================================================================== */
+void limitSwitchMonitoring()
+{
+  int frontSwitch = digitalRead(frontLimitSwitch);
+  int backSwitch = digitalRead(backLimitSwitch);
+  Serial.print(frontSwitch);
+  Serial.print(",");
+  Serial.println(backSwitch);
+  delay(100);
+} //limitSwitchMonitoring()
+
+/**
+ * @brief Set the colour of the reset button's LED
+=================================================================================================== */
+void setResetButtonLEDColour(int redDutyCycle, int blueDutyCycle, int greenDutyCycle)
+{
+  ledcWrite(redResetLED.pwmChannel, redDutyCycle); // Set the duty cycle of red LED PWM channel
+  ledcWrite(blueResetLED.pwmChannel, blueDutyCycle); // Set the duty cycle of blue LED PWM channel
+  ledcWrite(greenResetLED.pwmChannel, greenDutyCycle); // Set the duty cycle of green LED PWM channel
+} //setResetButtonLEDColour()
+
+/** 
+ * @brief Standard set up routine for Arduino programs 
+=================================================================================================== */
+void setup()
+{
+    Serial.begin(115200); // Open a serial connection at 115200bps
+    while (!Serial) ;     // Wait for Serial port to be ready
+    Serial.println("<setup> Start of setup");
+    Wire.begin(I2C_bus0_SDA,I2C_bus0_SCL,I2C_bus0_speed);
+    scanBus0();
+    Wire1.begin(I2C_bus1_SDA,I2C_bus1_SCL,I2C_bus1_speed);
+    scanBus1();
+    byte softVer = getMD25FirmwareVersion(); // Gets the software version of MD25
+    Serial.print("<setup> MD25 firmware version is ");
+    Serial.println(softVer, HEX);
+    encodeReset();
+    Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+    Wire.write(SPEED1); // Indicate motor1 speed register
+    Wire.write(20); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+    Wire.endTransmission(); // End transmit
+    pinMode(17, INPUT_PULLDOWN);
+
+//    pinMode(redResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons red LED to output mode
+//    pinMode(blueResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons blue LED to output mode
+//    pinMode(greenResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons green LED to output mode 
+    // Setup rest button's red LED
+    ledcSetup(redResetLED.pwmChannel, redResetLED.pwmFrequency, redResetLED.pwmResolution); // Setup PWM channel for RED reset LED
+    ledcAttachPin(redResetLED.gpioPin, redResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button RED LED
+    // Setup rest button's blue LED
+    ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
+    ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
+    // Setup rest button's green LED
+    ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
+    ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
+    // Setup balance limit switches
+    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
+    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor
+    Serial.println("<setup> End of setup");
+} //setup()
+
+/**
  * @brief Standard looping routine for Arduino programs
 =================================================================================================== */
 void loop()
 {
-//  motorTest();
+  ledcWrite(0, brightness); // Set the duty cycle of PWM channel assigned to 
+  ledcWrite(1, brightness); // Set the duty cycle of PWM channel assigned to 
+  ledcWrite(2, brightness); // Set the duty cycle of PWM channel assigned to 
+  brightness = brightness + fadeAmount; // change the brightness for next time through the loop:
   
+  if (brightness <= 0 || brightness >= 255) // reverse the direction of the fading at the ends of the fade:
+  {
+    fadeAmount = -fadeAmount;
+  }
+  // wait for 30 milliseconds to see the dimming effect
+  delay(30);
+
+//    ledcWrite(greenResetLED.pwmChannel, greenResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to green LED
+//    ledcWrite(blueResetLED.pwmChannel, blueResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to blue LED
+//    ledcWrite(redResetLED.pwmChannel, redResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to red LED 
+
+//    setResetButtonLEDColour(0, 1, 0);
+//  motorTest();
+// limitSwitchMonitoring();
+//  for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++) 
+//  {
+//    setResetButtonLEDColour(dutyCycle, 0, 0);
+//    delay(100);
+//  } //for
+//  for (int dutyCycle = 255; dutyCycle >= 0; dutyCycle--) 
+//  {
+//    setResetButtonLEDColour(dutyCycle, 0, 0);
+//    delay(100);
+//  } //for
 } //loop()

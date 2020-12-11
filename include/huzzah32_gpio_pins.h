@@ -40,28 +40,29 @@
  |: 14  :|: 14  :|: I/O :|: Analog input A6 on ADC #2 and also GPIO #14. | 
 
  Note you can only read analog inputs on ADC #1 once WiFi has started
+ Also that the physical pin count starts at the reset button on long pin side of the Huzzah32 development board
  *************************************************************************************************************************************/
 #ifndef _HUZZAH32_GPIO_PINS_H // Start of conditional preprocessor code that only allows this library to be included once
 #define _HUZZAH32_GPIO_PINS_H // Preprocessor variable used by above check
-#define pinLblTX 17 
-#define pinLblRX 16 
-#define pinLblSCL 22 
-#define pinLblSDA 23 
-#define pinLblSCK 5 
-#define pinLblMO 18
-#define pinLblMI 19 
-#define pinLblA0 26
-#define pinLblA1 25
-#define pinLblA2 34
-#define pinLblA3 39
-#define pinLblA4 36
-#define pinLblA5 4
-#define pinLbl21 21
-#define pinLbl13 13
-#define pinLbl12 12
-#define pinLbl27 27
-#define pinLbl33 33
-#define pinLbl15 15
-#define pinLbl32 32
-#define pinLbl14 14
+#define pinLblTX 17 // Physical pin 15
+#define pinLblRX 16 // Physical pin 14
+#define pinLblSCL 22 // Physical pin 18
+#define pinLblSDA 23 // Physical pin 17 
+#define pinLblSCK 5 // Physical pin 11
+#define pinLblMO 18 // Physical pin 12
+#define pinLblMI 19 // Physical pin 13
+#define pinLblA0 26 // Physical pin 5
+#define pinLblA1 25 // Physical pin 6
+#define pinLblA2 34 // Physical pin 7
+#define pinLblA3 39 // Physical pin 8
+#define pinLblA4 36 // Physical pin 9
+#define pinLblA5 4 // Physical pin 10
+#define pinLbl21 21 // Physical pin 16
+#define pinLbl13 13 // Physical pin 25
+#define pinLbl12 12 // Physical pin 24
+#define pinLbl27 27 // Physical pin 23
+#define pinLbl33 33 // Physical pin 22
+#define pinLbl15 15 // Physical pin 21
+#define pinLbl32 32 // Physical pin 20
+#define pinLbl14 14 // Physical pin 19
 #endif // End of conditional preprocessor code
