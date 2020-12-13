@@ -6,6 +6,7 @@
  * @copyright Copyright (c) 2020
  * YYYY-MM-DD Dev    Description
  * ---------- ------ -----------------------------------------------------------------------------------------------------------------
+ * 2020-12-12 va3wam Cleaned up loop() and messed around with reet button tri-coloured LED to test newly assembled circuit.
  * 2020-11-23 va3wam Added include of development board pin definition file
  * 2020-10-22 va3wam Program created
  *************************************************************************************************************************************/
@@ -56,9 +57,9 @@ typedef struct
   int pwmDutyCycle; // Up time of the PWM signal. Ranges from 0-255. 127 is a 50% duty cycle for example.
   int gpioPin; // GPIO pin connected to the LED  
 }resetButtonLED; 
-resetButtonLED redResetLED = {2, 5000, 8, 0, resetRedLED}; // Chan 2, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), red LED pin 
-resetButtonLED blueResetLED = {1, 5000, 8, 0, resetBlueLED}; // Chan 1, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), blue LED pin
-resetButtonLED greenResetLED = {0, 5000, 8, 0, resetGreenLED}; // Chan 0, freq 5000Hz, 8 bit res, 255 tick up (100% duty cycle), green LED pin
+resetButtonLED redResetLED = {2, 500, 8, 0, resetRedLED}; // Chan 2, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), red LED pin 
+resetButtonLED blueResetLED = {1, 500, 8, 0, resetBlueLED}; // Chan 1, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), blue LED pin
+resetButtonLED greenResetLED = {0, 500, 8, 0, resetGreenLED}; // Chan 0, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), green LED pin
 int fadeAmount = 5; // How much to fade the LEDs by each loop
 int brightness = 0; // How bright the LED is
 
@@ -336,18 +337,29 @@ void setup()
     Wire.endTransmission(); // End transmit
     pinMode(17, INPUT_PULLDOWN);
 
+    // Playing with digital outputs for RGB LED on reset button. Note inverted logic, 1 = off, 0 = on
 //    pinMode(redResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons red LED to output mode
 //    pinMode(blueResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons blue LED to output mode
 //    pinMode(greenResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons green LED to output mode 
-    // Setup rest button's red LED
+//    digitalWrite(redResetLED.gpioPin,1);
+//    digitalWrite(blueResetLED.gpioPin,1);
+//    digitalWrite(greenResetLED.gpioPin,0);
+
+    // Playing with analog outputs for RGB LED on reset button. Note inverted dutycycle logic, 0 = full on, 255 = full off         
+    // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
     ledcSetup(redResetLED.pwmChannel, redResetLED.pwmFrequency, redResetLED.pwmResolution); // Setup PWM channel for RED reset LED
     ledcAttachPin(redResetLED.gpioPin, redResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button RED LED
+    ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
+    delay(1000);
+    ledcDetachPin(redResetLED.gpioPin);
+//    ledcWrite(redResetLED.pwmChannel, redResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to green LED
+
     // Setup rest button's blue LED
-    ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
-    ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
+//    ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
+//    ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
     // Setup rest button's green LED
-    ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
-    ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
+//    ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
+//    ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
     // Setup balance limit switches
     pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
     pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor
@@ -359,33 +371,6 @@ void setup()
 =================================================================================================== */
 void loop()
 {
-  ledcWrite(0, brightness); // Set the duty cycle of PWM channel assigned to 
-  ledcWrite(1, brightness); // Set the duty cycle of PWM channel assigned to 
-  ledcWrite(2, brightness); // Set the duty cycle of PWM channel assigned to 
-  brightness = brightness + fadeAmount; // change the brightness for next time through the loop:
-  
-  if (brightness <= 0 || brightness >= 255) // reverse the direction of the fading at the ends of the fade:
-  {
-    fadeAmount = -fadeAmount;
-  }
-  // wait for 30 milliseconds to see the dimming effect
-  delay(30);
-
-//    ledcWrite(greenResetLED.pwmChannel, greenResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to green LED
-//    ledcWrite(blueResetLED.pwmChannel, blueResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to blue LED
-//    ledcWrite(redResetLED.pwmChannel, redResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to red LED 
-
-//    setResetButtonLEDColour(0, 1, 0);
 //  motorTest();
-// limitSwitchMonitoring();
-//  for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++) 
-//  {
-//    setResetButtonLEDColour(dutyCycle, 0, 0);
-//    delay(100);
-//  } //for
-//  for (int dutyCycle = 255; dutyCycle >= 0; dutyCycle--) 
-//  {
-//    setResetButtonLEDColour(dutyCycle, 0, 0);
-//    delay(100);
-//  } //for
+  limitSwitchMonitoring();
 } //loop()
