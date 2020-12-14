@@ -349,17 +349,14 @@ void setup()
     // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
     ledcSetup(redResetLED.pwmChannel, redResetLED.pwmFrequency, redResetLED.pwmResolution); // Setup PWM channel for RED reset LED
     ledcAttachPin(redResetLED.gpioPin, redResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button RED LED
-    ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
-    delay(1000);
-    ledcDetachPin(redResetLED.gpioPin);
+//    ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
 //    ledcWrite(redResetLED.pwmChannel, redResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to green LED
-
     // Setup rest button's blue LED
-//    ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
-//    ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
+    ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
+    ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
     // Setup rest button's green LED
-//    ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
-//    ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
+    ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
+    ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
     // Setup balance limit switches
     pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
     pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor
@@ -372,5 +369,17 @@ void setup()
 void loop()
 {
 //  motorTest();
-  limitSwitchMonitoring();
+//  limitSwitchMonitoring();
+    ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
+    ledcWrite(blueResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to blue LED
+    ledcWrite(greenResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to green LED
+    delay(500);
+    ledcWrite(redResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to red LED
+    ledcWrite(blueResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to blue LED
+    ledcWrite(greenResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to green LED
+    delay(500);
+    ledcWrite(redResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to red LED
+    ledcWrite(blueResetLED.pwmChannel, 254); // Set the duty cycle of PWM channel assigned to blue LED
+    ledcWrite(greenResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to green LED
+    delay(500);
 } //loop()
