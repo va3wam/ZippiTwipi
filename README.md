@@ -43,7 +43,7 @@ This Arduino code was developed using the following set up.
 The following additional libraries are used in the Arduino C++ code:
 
 * The standard Arduino library that is bundled with PlatformIO
-* THe standard Wire library that is bundled with PlatformIO
+* The standard Wire library that is bundled with PlatformIO
 * https://github.com/marcoschwartz/LiquidCrystal_I2C
 
 ## Contributing
@@ -67,10 +67,12 @@ See also the list of [contributors](https://github.com/va3wam/ZippiTwipi/setting
 
 ## License
 
-This project has no licensing terms. Use at own risk, no support provided. 
+This project is lisenced using the MIT Open Source Initiative which you can read [here](https://opensource.org/licenses/MIT) 
 
 ## Acknowledgments
 
-* Big thanks to [Brokking](http://www.brokking.net/yabr_main.html) for his excellent tutorial which really helped us get going
-* Thanks to the folks who developed the libraries we have made use of for I2C, JSON, Web and Websockets
-
+* Joop Brokking and his [Balancing Robot](http://www.brokking.net/yabr_main.html)
+* Tony DiCola and Adafruit Industries for their MQTT QOS1 library
+* Jeff Rowberg for the MPU6050 DMP logic
+* Daniel Eichhorn for OLED library 
+* The many folks involved in porting the Arduino libraries over to the ESP32
