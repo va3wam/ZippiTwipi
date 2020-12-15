@@ -14,12 +14,12 @@ The software in this repository was written in the C++ (Arduino) language using 
 The Arduino C++ code was written to run on the Espressif ESP WROOM32 "Software On a Chip" (SOC). The development board used for this SOC is the Adafruit Huzzah32 featherboard. Note that some standard Arduino functions such as AnalogWrite() have not been implemented on the ESP32 SOC and alternate functions such as ledcSetup(), ledcAttachPin() and ledcWrite() must be used in their place. There are some additional compatability issues of note as follows:
 
 1. The GPIO pin usage is loosey Adafruit featherboard compliant meaning it will work with some boards such as the OLED board 
-2. This code does not use the Twipe pinout configuration or naming convension so will not port over to a Twipe compiant robot unmodified
-3. This code will NOT run on an ESP8266 unmodified because of both GPIO incompatabiity as well as some ESP32 specific libraries that are in use 
+2. This code does not use the Twipe pinout configuration or naming convension so will not port over to a Twipe compliant robot unmodified
+3. This code will NOT run on an ESP8266 unmodified because of both GPIO incompatability as well as some ESP32 specific libraries that are in use 
 
 ### Installing
 
-There are numerous tutorials on how to install Arduino code onto an ESP WROOM32 from Microsoft's Visual Studio Code. Try out one of these or find one more to your liking:
+There are numerous tutorials on how to install Arduino code onto an ESP WROOM32 from Microsoft's Visual Studio Code. Try out one of the following tutorials or find another one that is more to your liking:
 * [MakerPro](https://maker.pro/arduino/tutorial/how-to-use-visual-studio-code-for-arduino)
 * [Random Nerd](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
 
