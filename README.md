@@ -48,7 +48,11 @@ The following additional libraries are used in the Arduino C++ code:
 
 ## Contributing
 
-This project is being developed by a couple of buddies. If you wish to get involved in this project feel free to contact us at one of the email addreses listed in the authors section below. All current and planned work for this project is tracked using the [Github projects feature](https://github.com/va3wam/ZippiTwipi/projects).
+This project is being developed by a couple of buddies. If you wish to get involved in this project feel free to contact us at one of the email addreses listed in the authors section below. All current and planned work for this project is tracked using the [Github projects feature](https://github.com/va3wam/ZippiTwipi/projects). Here are the standards that we follow for all va3wam projects:
+
+* [Set up your local repo, Git workflow](https://github.com/va3wam/va3wam.github.io/wiki/Software-Version-Control)
+* [Recommended Tool chain](https://github.com/va3wam/va3wam.github.io/wiki/Software-Languages-&-Tools)
+* [va3wam coding standards](https://github.com/va3wam/va3wam.github.io/wiki/Software-Coding-Standards) 
 
 ## Versioning
 
