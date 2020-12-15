@@ -19,11 +19,13 @@ The Arduino C++ code was written to run on the Espressif ESP WROOM32 "Software O
 
 ### Installing
 
-There are numerous tutorials on how to install Arduino code onto an ESP WROOM32 from Visual Source Code. Details and relevant links can be found on this respositories wiki. 
+There are numerous tutorials on how to install Arduino code onto an ESP WROOM32 from Microsoft's Visual Studio Code. Try out one of these or find one more to your liking:
+* [MakerPro](https://maker.pro/arduino/tutorial/how-to-use-visual-studio-code-for-arduino)
+* [Random Nerd](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
 
 ## Running the tests
 
-At this time there are no automated tests for this system
+At this time there are no automated tests for this application.
 
 ## Deployment
 
