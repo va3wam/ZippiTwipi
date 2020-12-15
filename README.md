@@ -56,7 +56,7 @@ This project is being developed by a couple of buddies. If you wish to get invol
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/va3wam/TWIPi/branches/all). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/va3wam/ZippiTwipi/tags). 
 
 ## Authors
 
@@ -74,5 +74,5 @@ This project is lisenced using the MIT Open Source Initiative which you can read
 * Joop Brokking and his [Balancing Robot](http://www.brokking.net/yabr_main.html)
 * Tony DiCola and Adafruit Industries for their MQTT QOS1 Arduino library
 * Jeff Rowberg for the MPU6050 DMP logic
-* DFRobot for their LiquidCrystal I2C LCD display Arduino library
+* DFRobot & John Rickman for their LiquidCrystal I2C LCD display Arduino library
 * The many folks involved in porting the Arduino libraries over to the ESP32
