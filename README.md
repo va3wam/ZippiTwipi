@@ -60,8 +60,8 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* [Doug](https://github.com/nerdoug) - *PID and motor control logic and circuit diagrams*
-* [va3wam](https://github.com/va3wam) - *Initial code porting from ESP128 to ESP32, remote Java client and CAD/CAM designs* 
+* [Doug](https://github.com/nerdoug) 
+* [va3wam](https://github.com/va3wam) 
 
 See also the list of [contributors](https://github.com/va3wam/ZippiTwipi/settings/access) who participated in this project.
 
@@ -72,7 +72,7 @@ This project is lisenced using the MIT Open Source Initiative which you can read
 ## Acknowledgments
 
 * Joop Brokking and his [Balancing Robot](http://www.brokking.net/yabr_main.html)
-* Tony DiCola and Adafruit Industries for their MQTT QOS1 library
+* Tony DiCola and Adafruit Industries for their MQTT QOS1 Arduino library
 * Jeff Rowberg for the MPU6050 DMP logic
-* Daniel Eichhorn for OLED library 
+* DFRobot for their LiquidCrystal I2C LCD display Arduino library
 * The many folks involved in porting the Arduino libraries over to the ESP32
