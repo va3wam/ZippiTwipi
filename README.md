@@ -39,6 +39,8 @@ This Arduino code was developed using the following set up.
 * Hardware platform - espressif32
 * Board - Adafruit Huzzah32 featherboard
 
+<img src="./img/zippiTwipi.jpeg" alt="ZipiTwipi Robot" width="800" height="500"> 
+
 ### Arduino Libraries
 The following additional libraries are used in the Arduino C++ code:
 
