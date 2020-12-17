@@ -1,3 +1,5 @@
+<img src="./img/zippiTwipi.jpg" alt="ZipiTwipi Robot" width="800" height="500"> 
+
 # ZippiTwipi
 This repository contains all of the information regarding a DC motor based two wheeled inverted pendulum robot experimental platform. This initiative is running in parallel with the [TWIPe repository](https://github.com/va3wam/TWIPe/wiki). This repository contains C++ source code intended to run on the Adafruit Huzzah32 development board.  
 
@@ -38,8 +40,6 @@ This Arduino code was developed using the following set up.
 * Library Framework - Arduino
 * Hardware platform - espressif32
 * Board - Adafruit Huzzah32 featherboard
-
-<img src="./img/zippiTwipi.jpeg" alt="ZipiTwipi Robot" width="800" height="500"> 
 
 ### Arduino Libraries
 The following additional libraries are used in the Arduino C++ code:
