@@ -2,8 +2,6 @@
 
 # ZippiTwipi
 
-[![LICENSE](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/mmistakes/minimal-mistakes/master/LICENSE)
-
 This repository contains all of the information regarding a DC motor based two wheeled inverted pendulum robot experimental platform. This initiative is running in parallel with the [TWIPe repository](https://github.com/va3wam/TWIPe/wiki). This repository contains C++ source code intended to run on the Adafruit Huzzah32 development board.  
 
 ## Getting Started
