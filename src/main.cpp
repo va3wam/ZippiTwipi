@@ -22,36 +22,11 @@
  * 2020-10-22 va3wam Program created
  *************************************************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
-#include <Wire.h> // Required for serial IIC communication. Comes with Platform.io 
+#include <Wire.h> // Required for serial I2C communication. Comes with Platform.io 
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
+#include <amI2C.h> // Required for serial I2C communication. 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @brief Define I2C bus0 - wire() - constants, classes and global variables 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus0_speed 400000 // Define speed of I2C bus 0. Note 400KHz is the upper speed limit for ESP32 I2C
-#define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for MD25 H-Bridge
-#define numOfI2cBuses 2 // Define how many I2C buses the robot has on it's circuit board
-#define maxDevicesPerBus 4 // Define the maximum number of devices that can be on an I2C bus
-typedef struct 
-{
-  int agentCnt; // Number of agent devices on this bus
-  int agentAddress[maxDevicesPerBus]; // Addresses of the agent devices on this bus
-  String agentDescription[maxDevicesPerBus]; // Descriptions of the agent devices on this bus 
-}i2cBusData; // i2c bus configuration structure
-i2cBusData i2cBusInfo[numOfI2cBuses]; // Define array of I2C bus objects used in this robot 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @brief Define I2C device addresses 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define MPU6050_I2C_ADD 0x68 // GY521 I2C address
-#define leftOLED_I2C_ADD 0x3D // OLED used for robot's left eye I2C adddress
-#define rightOLED_I2C_ADD 0x3C // OLED used for robot' right eye I2C address
-#define MD25ADDRESS 0xB0 >> 1 // Wire Library only uses 7 bit addresses so you need to shift address one bit to the right
-#define LED_I2C_ADDRESS 0x3F // 16x2 LED used as main display
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @brief Define MD25 registers 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Define MD25 registers 
 #define CMD (byte) 0x00 // Command register. Cast as a byte to stop 
                         // them being misinterperted as NULL. This is a bug with arduino 1
 #define SOFTWAREREG 0x0D // Byte to read the software version
@@ -62,10 +37,8 @@ i2cBusData i2cBusInfo[numOfI2cBuses]; // Define array of I2C bus objects used in
 #define VOLTREAD 0x0A // Byte to read battery volts
 #define RESETENCODERS 0x20 // Byte to reset the motor encoder counters
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @brief Define structure and variables for reset buttons built-in LEDs. 
-/// @ref https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Define structure and variables for reset buttons built-in LEDs. 
+// https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
 typedef struct
 {
   int pwmChannel; // There are 16 PWM channels available. Choose any channel between 0 and 15.
@@ -80,9 +53,7 @@ resetButtonLED greenResetLED = {0, 500, 8, 0, resetGreenLED}; // Chan 0, freq 40
 int fadeAmount = 5; // How much to fade the LEDs by each loop
 int brightness = 0; // How bright the LED is
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @brief Global control variables  
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Global control variables  
 bool printHeaders = true;
 long currentCnt1; 
 long prevCnt1 = 0;
@@ -92,94 +63,8 @@ long failCount1 = 0;
 long totalCount1 = 0;
 long percentage1 = 0;
 
-/*************************************************************************************************************************************
- * @brief Identify a device found on an I2C bus based on its address
- * @param deviceAddress I2C address of the device to be identified
- * @return deviceDescription Text description of the device 
- *************************************************************************************************************************************/
-String identifyDevice(int deviceAddress)
-{
-  switch (deviceAddress) 
-  {
-    case rightOLED_I2C_ADD:    
-      return "Right OLED"; 
-      break;
-    case leftOLED_I2C_ADD:    
-      return "Left OLED";
-      break;
-    case MD25ADDRESS:    
-      return "MD25 motor controller";
-      break;
-    case MPU6050_I2C_ADD:
-      return "MPU6050 IMU";
-      break;
-    case LED_I2C_ADDRESS:
-      return "16x2 LED display";
-      break;
-    default: 
-      return "Unknown";
-      break;
-  } //switch
-} //identifyDevice()
-
-/*************************************************************************************************************************************
- * @brief Scan I2C looking for connected devices in the valid address range
- * @param Bus array element
- * @note Addresses 0x00 - 0x07 and 0x78 - 0x7F are reserved I2C addresses
- * 0x00 - Reserved - General Call Address
- * 0x01 - Reserved for CBUS Compatibility
- * 0x02 - Reserved for I2C-compatible Bus Variants
- * 0x03 - Reserved for Future Use
- * 0x04, 0x05, 0x06, 0x07 - Reserved for Hs-mode Master
- * 0x78 0x79 0x7A 0x7B - Reserved for 10-bit I2C Addressing
- * 0x7C 0x7D 0x7E 0x7F - Reserved for Future Purposes
- * @note endTransmission() returns one of the following codes    
- * 0:success
- * 1:data too long to fit in transmit buffer
- * 2:received NACK on transmit of address
- * 3:received NACK on transmit of data
- * 4:other error 
- *************************************************************************************************************************************/
-void scanI2Cbus(int busNum)
-{
-  uint8_t testResult; // Result of check for device at a given address number
-  byte count = 0; // Number of devices found on bus
-  for (byte i = 8; i < 120; i++) // Scan through non-reserved addresses on bus
-  { 
-    if(busNum == 0) // Bus0 is called wire()
-    {
-      Wire.beginTransmission(i); // Begin a conversation with current address 
-      testResult = Wire.endTransmission(); // Capture return code from address
-    } // if
-    else // Bus1 is called wire1()
-    {
-      Wire1.beginTransmission (i);
-      testResult = Wire1.endTransmission();
-    } //else
-    if(testResult == 0) //  If the endTransmission returns a success code (0)
-    {
-      i2cBusInfo[busNum].agentAddress[count] = i; // Record the device address 
-      i2cBusInfo[busNum].agentDescription[count] = identifyDevice(i); // Record the device description  
-      count++; // Increment the count for how many devices are on the bus
-      delay(1); // Slow things down a biit to avoid over-whelming the I2C bus
-    } // end of good response
-  } // end of for loop
-  i2cBusInfo[busNum].agentCnt = count; // Record the final device count for the bus
-  Serial.print("<scanI2Cbus> Scanned i2c bus ");
-  Serial.print(busNum);
-  Serial.print (" and found ");
-  Serial.print (count, DEC);
-  Serial.println (" device(s)");
-  for(byte i = 0; i < count; i++) // Report on what devices were found
-  {
-    Serial.print("<scanI2Cbus> ");
-    Serial.print(i2cBusInfo[busNum].agentAddress[i], DEC);
-    Serial.print(" (0x");
-    Serial.print(i2cBusInfo[busNum].agentAddress[i], HEX);
-    Serial.print(") - ");
-    Serial.println(i2cBusInfo[busNum].agentDescription[i]);
-  } //for
-} //scanI2Cbus()
+// Define I2C bus
+amI2C i2cBus; // Object to manage I2C buses
 
 /** 
  * @brief Function that gets the software version 
@@ -352,17 +237,6 @@ void setupSerial(unsigned long baudRate)
   while (!Serial); // Wait for Serial port to be ready
 } //setupSerial()
 
-/**
- * @brief Initialize the I2C buses used by this application
-=================================================================================================== */
-void setupI2c()
-{
-  Wire.begin(I2C_bus0_SDA,I2C_bus0_SCL,I2C_bus0_speed);
-  scanI2Cbus(0);
-  Wire1.begin(I2C_bus1_SDA,I2C_bus1_SCL,I2C_bus1_speed);
-  scanI2Cbus(1);
-} //setupSerial()
-
 /** 
  * @brief Standard set up routine for Arduino programs 
 =================================================================================================== */
@@ -373,7 +247,9 @@ void setup()
   setupSerial(serialBaudRate); // Set serial baud rate  
   Serial.print("<setup> Start of setup. Serial baud rate is ");
   Serial.println(serialBaudRate);
-  setupI2c(); // Set up I2C communication
+  // Setup I2C buses
+  i2cBus.configure(0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0
+  i2cBus.configure(1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
 
     byte softVer = getMD25FirmwareVersion(); // Gets the software version of MD25
     Serial.print("<setup> MD25 firmware version is ");
