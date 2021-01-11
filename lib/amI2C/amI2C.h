@@ -1,5 +1,5 @@
 /*************************************************************************************************************************************
- * @file amI2C.cpp
+ * @file amI2C.h
  * @author va3wam
  * @brief I2C bus library for ESP32 Arduino 
  * @details Twowire serial implementation of I2C bus. Supports two buses known as bus0 and bus1.

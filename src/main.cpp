@@ -24,18 +24,8 @@
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial I2C communication. Comes with Platform.io 
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
-#include <amI2C.h> // Required for serial I2C communication. 
-
-// Define MD25 registers 
-#define CMD (byte) 0x00 // Command register. Cast as a byte to stop 
-                        // them being misinterperted as NULL. This is a bug with arduino 1
-#define SOFTWAREREG 0x0D // Byte to read the software version
-#define SPEED1 (byte) 0x00 // Byte to send speed to first motor
-#define SPEED2 0x01 // Byte to send speed to second motor
-#define ENCODERONE 0x02 // Byte to read motor encoder 1
-#define ENCODERTWO 0x06 // Byte to read motor encoder 2
-#define VOLTREAD 0x0A // Byte to read battery volts
-#define RESETENCODERS 0x20 // Byte to reset the motor encoder counters
+#include <amI2C.h> // Required for serial I2C communication 
+#include <amMD25.h> // Required for motor control
 
 // Define structure and variables for reset buttons built-in LEDs. 
 // https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
@@ -53,144 +43,9 @@ resetButtonLED greenResetLED = {0, 500, 8, 0, resetGreenLED}; // Chan 0, freq 40
 int fadeAmount = 5; // How much to fade the LEDs by each loop
 int brightness = 0; // How bright the LED is
 
-// Global control variables  
-bool printHeaders = true;
-long currentCnt1; 
-long prevCnt1 = 0;
-long errFilter = 100;
-long successCount1 = 0;
-long failCount1 = 0;
-long totalCount1 = 0;
-long percentage1 = 0;
-
-// Define I2C bus
+// Instantiate objects
 amI2C i2cBus; // Object to manage I2C buses
-
-/** 
- * @brief Function that gets the software version 
-=================================================================================================== */
-byte getMD25FirmwareVersion()
-{                                               
-  Serial.println("<getMD25FirmwareVersion> Retrieving firmware version from MD25");
-  Wire.beginTransmission(MD25ADDRESS); // Request token to transmit on I2C bus
-  Wire.write(SOFTWAREREG); // Send byte to read software version as a single byte
-  Wire.endTransmission(); // End request for token
-  Wire.requestFrom(MD25ADDRESS, 1); // Request 1 byte from MD25 address register
-  while(Wire.available() < 1); // Wait for reply to request for address to arrive
-  byte software = Wire.read(); // Read it in
-  Serial.print("<getMD25FirmwareVersion> Response to request for software version is ");
-  Serial.println(software, HEX);
-  return(software); // Return address to 
-} //getMD25FirmwareVersion()
-
-/** 
- * @brief This function resets the encoder values to 0
-=================================================================================================== */
-void encodeReset()
-{                                       
-  Wire.beginTransmission(MD25ADDRESS);
-  Wire.write(CMD);
-  Wire.write(0x20); // Putting the value 0x20 to reset encoders
-  Wire.endTransmission(); 
-} //encodeReset()
-
-/** 
- * @brief Function to reads the value of encoder 1 as a long
-=================================================================================================== */
-long encoder1()
-{                                            
-  Wire.beginTransmission(MD25ADDRESS); // Send byte to get a reading from encoder 1
-  Wire.write(ENCODERONE);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
-  while(Wire.available() < 4); // Wait for 4 bytes to arrive
-  long poss1 = Wire.read(); // First byte for encoder 1, HH.
-  poss1 <<= 8;
-  poss1 += Wire.read(); // Second byte for encoder 1, HL
-  poss1 <<= 8;
-  poss1 += Wire.read(); // Third byte for encoder 1, LH
-  poss1 <<= 8;
-  poss1 +=Wire.read(); // Fourth byte for encoder 1, LL
-
-  delay(50); // Wait for everything to make sure everything is sent  
-  return(poss1);
-} //encoder1()
-
-/** 
- * @brief Function to reads the value of encoder 2 as a long
-=================================================================================================== */
-long encoder2()
-{                                            
-  Wire.beginTransmission(MD25ADDRESS);           
-  Wire.write(ENCODERTWO);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
-  while(Wire.available() < 4); // Wait for 4 bytes to become available
-  long poss2 = Wire.read();
-  poss2 <<= 8;
-  poss2 += Wire.read();                
-  poss2 <<= 8;
-  poss2 += Wire.read();                
-  poss2 <<= 8;
-  poss2 +=Wire.read();               
-  
-  delay(50); // Wait to make sure everything is sent   
-  return(poss2);
-} //encoder2()
-
-/** 
- * @brief Function to stop motors
-=================================================================================================== */
-void stopMotor()
-{                                       
-  Wire.beginTransmission(MD25ADDRESS);
-  Wire.write(SPEED2);
-  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
-  Wire.endTransmission();
-  
-  Wire.beginTransmission(MD25ADDRESS);
-  Wire.write(SPEED1);
-  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
-  Wire.endTransmission();
-}  //stopMotor()
-
-/**
- * @brief Run motor test code
-=================================================================================================== */
-void motorTest()
-{
-  if(printHeaders == true)
-  {
-    Serial.println("<loop> curr count , prev count , Filter , Succ , Fail , percent"); // Headings for output
-    printHeaders = false;
-  } //if
-  currentCnt1 = encoder1();
-  if(currentCnt1 < prevCnt1 + errFilter) // If there is a large jump in the counter
-  {
-    prevCnt1 = currentCnt1;
-    successCount1 ++;
-  } //if
-  else
-  {
-    failCount1 ++;
-    totalCount1 = successCount1 + failCount1;
-    percentage1 = failCount1 / successCount1;
-    Serial.print("<loop> ");
-    Serial.print(currentCnt1);
-    Serial.print(",");
-    Serial.print(prevCnt1);
-    Serial.print(",");
-    Serial.print(errFilter);
-    Serial.print(",");
-    Serial.print(successCount1);
-    Serial.print(",");
-    Serial.print(failCount1);
-    Serial.print(", ");
-    Serial.println(percentage1);
-  } //else
-} // motorTest()
+amMD25 motorControl; // Object to manage motors via h-bridge controller
 
 /**
  * @brief Check the limit switches moounted at the front and back of the robot to see if it has
@@ -251,30 +106,27 @@ void setup()
   i2cBus.configure(0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0
   i2cBus.configure(1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
 
-    byte softVer = getMD25FirmwareVersion(); // Gets the software version of MD25
-    Serial.print("<setup> MD25 firmware version is ");
-    Serial.println(softVer, HEX);
-    encodeReset();
-    Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-    Wire.write(SPEED1); // Indicate motor1 speed register
-    Wire.write(20); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-    Wire.endTransmission(); // End transmit
-    pinMode(17, INPUT_PULLDOWN);
-
-    // Playing with digital outputs for RGB LED on reset button. Note inverted logic, 1 = off, 0 = on
-//    pinMode(redResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons red LED to output mode
-//    pinMode(blueResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons blue LED to output mode
-//    pinMode(greenResetLED.gpioPin, OUTPUT); // Set pin connected to reset buttons green LED to output mode 
-//    digitalWrite(redResetLED.gpioPin,1);
-//    digitalWrite(blueResetLED.gpioPin,1);
-//    digitalWrite(greenResetLED.gpioPin,0);
+  // Setup motor controller
+  byte softVer = motorControl.getMD25FirmwareVersion(); // Gets the software version of MD25
+  Serial.print("<setup> MD25 firmware version is ");
+  Serial.println(softVer, HEX);
+  motorControl.encodeReset();
+  Serial.print("<setup> Encode 1 = ");
+  Serial.println(motorControl.encoder1());
+  Serial.print("<setup> Encode 2 = ");
+  Serial.println(motorControl.encoder2());
+  motorControl.spinMotor(2,20); 
+  Serial.print("<setup> Encode 1 = ");
+  Serial.println(motorControl.encoder1());
+  Serial.print("<setup> Encode 2 = ");
+  Serial.println(motorControl.encoder2());
+   
+//    pinMode(17, INPUT_PULLDOWN);
 
     // Playing with analog outputs for RGB LED on reset button. Note inverted dutycycle logic, 0 = full on, 255 = full off         
     // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
     ledcSetup(redResetLED.pwmChannel, redResetLED.pwmFrequency, redResetLED.pwmResolution); // Setup PWM channel for RED reset LED
     ledcAttachPin(redResetLED.gpioPin, redResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button RED LED
-//    ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
-//    ledcWrite(redResetLED.pwmChannel, redResetLED.pwmDutyCycle); // Set the duty cycle of PWM channel assigned to green LED
     // Setup rest button's blue LED
     ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
     ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED

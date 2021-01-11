@@ -22,7 +22,7 @@
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial I2C communication. Comes with Platform.io
-#include <amI2C.h> // Required for serial I2C communication. 
+#include <amI2C.h> // Header file for linking. 
 
 /**
  * @brief This is the constructor for this class.
@@ -30,7 +30,7 @@
 amI2C::amI2C()
 {
     
-} //amI2Cbus::amI2Cbus()
+} //amI2C::amI2C()
 
 /**
  * @brief Identify a device found on an I2C bus based on its address
