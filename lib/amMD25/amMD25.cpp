@@ -136,56 +136,50 @@ void amMD25::stopMotor()
 }  //stopMotor()
 
 /** 
- * @brief Function to spin one or both motors a specified distance
+ * @brief Function to spin one or both motors at specified speed
  * @param motorNumber 0=left, 1=right, 2=both
- * @param distance How many encoder ticks to move
+ * @param speed How many encoder ticks to move
  * @note See full detais at https://www.pishrobot.com/files/products/datasheets/md25.pdf
- * 
 =================================================================================================== */
-void amMD25::spinMotor(int motorNumber, int distance)
+void amMD25::spinMotor(int motorNumber, int speed)
 {
   switch(motorNumber)
   {
     case 0: // Left motor 
+      Serial.print("<amMD25::spinMotor> Spin left motor");
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegMode); // Going to write to the mode register
       Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
       delay(1); // Give bus a breather
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
-      Wire.write(distance); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
       Wire.endTransmission(); // End transmit
       break;
     case 1: // Right motor 
+      Serial.print("<amMD25::spinMotor> Spin right motor");
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegMode); // Going to write to the mode register
       Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
       delay(1); // Give bus a breather
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegSpeed2); // Indicate motor1 speed register
-      Wire.write(distance); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
       Wire.endTransmission(); // End transmit
       break;
     default: // Both motors
+      Serial.println("<amMD25::spinMotor> Spin both motors");
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegMode); // Going to write to the mode register
       Wire.write(2); // Writing 2 to the mode register will make speed1 control both motors speed
       delay(1); // Give bus a breather
       Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
       Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
-      Wire.write(distance); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
       Wire.endTransmission(); // End transmit
       break;
   } // motorNumber;
-
-   Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-   Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
-   Wire.write(distance); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-   Wire.endTransmission(); // End transmit
-
-
 } // spinMotor()
-
 
 /**
  * @brief Run motor test code

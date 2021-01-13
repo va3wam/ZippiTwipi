@@ -105,7 +105,6 @@ void setup()
   // Setup I2C buses
   i2cBus.configure(0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0
   i2cBus.configure(1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
-
   // Setup motor controller
   byte softVer = motorControl.getMD25FirmwareVersion(); // Gets the software version of MD25
   Serial.print("<setup> MD25 firmware version is ");
@@ -115,7 +114,8 @@ void setup()
   Serial.println(motorControl.encoder1());
   Serial.print("<setup> Encode 2 = ");
   Serial.println(motorControl.encoder2());
-  motorControl.spinMotor(2,20); 
+  motorControl.spinMotor(0,1); // motor, speed 
+  delay(2000);
   Serial.print("<setup> Encode 1 = ");
   Serial.println(motorControl.encoder1());
   Serial.print("<setup> Encode 2 = ");

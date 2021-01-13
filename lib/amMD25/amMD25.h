@@ -59,7 +59,7 @@ class amMD25
     long encoder2();
     void stopMotor();
     void motorTest();
-    void spinMotor(int motorNumber, int distance);
+    void spinMotor(int motorNumber, int speed);
   private:
 };
 
