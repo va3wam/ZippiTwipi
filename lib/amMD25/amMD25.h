@@ -53,11 +53,11 @@ class amMD25
 {
   public:
     amMD25(); // Constructor
-    byte getMD25FirmwareVersion();
-    void encodeReset();
-    long encoder1();
-    long encoder2();
-    void stopMotor();
+    byte getFirmwareVersion();
+    void encoderReset();
+    long getEncoder1();
+    long getEncoder2();
+    void stopMotor(int motorNumber);
     void motorTest();
     void spinMotor(int motorNumber, int speed);
   private:

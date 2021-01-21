@@ -18,24 +18,14 @@
  * 
  * YYYY-MM-DD Dev    Description
  * ---------- ------ -------------------------------------------------------------------------------
+ * 2021-01-13 va3wam Renamed  Encoder1 and Encoder2 functions to getEncoder1 and getEncoder2 
+ *                   respectively 
  * 2021-01-10 va3wam Program created
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial I2C communication. Comes with Platform.io
 #include <amI2C.h> // Required for I2C address of MD25
 #include <amMD25.h> // Header file for linking. 
-
-    // Define global variables
-/*
-    bool printHeaders = true;
-    long currentCnt1; 
-    long prevCnt1 = 0;
-    long errFilter = 100;
-    long successCount1 = 0;
-    long failCount1 = 0;
-    long totalCount1 = 0;
-    long percentage1 = 0; 
-*/
 
 /**
  * @brief This is the constructor for this class.
@@ -48,24 +38,24 @@ amMD25::amMD25()
 /** 
  * @brief Function that gets the software version 
 =================================================================================================== */
-byte amMD25::getMD25FirmwareVersion()
+byte amMD25::getFirmwareVersion()
 {                                               
-  Serial.println("<getMD25FirmwareVersion> Retrieving firmware version from MD25");
+//  Serial.println("<amMD25::getFirmwareVersion> Retrieving firmware version from MD25");
   Wire.beginTransmission(MD25ADDRESS); // Request token to transmit on I2C bus
   Wire.write(MD25RegSoftwareRev); // Send byte to read software version as a single byte
   Wire.endTransmission(); // End request for token
   Wire.requestFrom(MD25ADDRESS, 1); // Request 1 byte from MD25 address register
   while(Wire.available() < 1); // Wait for reply to request for address to arrive
   byte software = Wire.read(); // Read it in
-  Serial.print("<getMD25FirmwareVersion> Response to request for software version is ");
-  Serial.println(software, HEX);
+//  Serial.print("<amMD25::getMD25FirmwareVersion> Response to request for software version is ");
+//  Serial.println(software, HEX);
   return(software); // Return address to 
 } //getMD25FirmwareVersion()
 
 /** 
  * @brief This function resets the encoder values to 0
 =================================================================================================== */
-void amMD25::encodeReset()
+void amMD25::encoderReset()
 {                                       
   Wire.beginTransmission(MD25ADDRESS); // Start conversation with motor controller
   Wire.write(MD25RegCmd); // Set up command register
@@ -76,7 +66,7 @@ void amMD25::encodeReset()
 /** 
  * @brief Function to reads the value of encoder 1 as a long
 =================================================================================================== */
-long amMD25::encoder1()
+long amMD25::getEncoder1()
 {                                            
   Wire.beginTransmission(MD25ADDRESS); // Send byte to get a reading from encoder 1
   Wire.write(MD25RegEncoder1a);
@@ -99,7 +89,7 @@ long amMD25::encoder1()
 /** 
  * @brief Function to reads the value of encoder 2 as a long
 =================================================================================================== */
-long amMD25::encoder2()
+long amMD25::getEncoder2()
 {                                            
   Wire.beginTransmission(MD25ADDRESS);           
   Wire.write(MD25RegEncoder2a);
@@ -121,18 +111,35 @@ long amMD25::encoder2()
 
 /** 
  * @brief Function to stop motors
+ * @param motorNumber 0=left, 1=right, 2=both
 =================================================================================================== */
-void amMD25::stopMotor()
+void amMD25::stopMotor(int motorNumber)
 {                                       
-  Wire.beginTransmission(MD25ADDRESS);
-  Wire.write(MD25RegSpeed2);
-  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
-  Wire.endTransmission();
-  
-  Wire.beginTransmission(MD25ADDRESS);
-  Wire.write(MD25RegSpeed1);
-  Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
-  Wire.endTransmission();
+  switch(motorNumber)
+  {
+      case 0: // Left motor 
+         Wire.beginTransmission(MD25ADDRESS);
+         Wire.write(MD25RegSpeed2);
+         Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+         Wire.endTransmission();
+         break;
+      case 1: // Right motor
+         Wire.beginTransmission(MD25ADDRESS);
+         Wire.write(MD25RegSpeed1);
+         Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+         Wire.endTransmission();
+         break;
+      default: // Both motors
+         Wire.beginTransmission(MD25ADDRESS);
+         Wire.write(MD25RegSpeed2);
+         Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+         Wire.endTransmission();
+         Wire.beginTransmission(MD25ADDRESS);
+         Wire.write(MD25RegSpeed1);
+         Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
+         Wire.endTransmission();
+         break;
+  } // switch
 }  //stopMotor()
 
 /** 
@@ -145,76 +152,41 @@ void amMD25::spinMotor(int motorNumber, int speed)
 {
   switch(motorNumber)
   {
-    case 0: // Left motor 
-      Serial.print("<amMD25::spinMotor> Spin left motor");
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegMode); // Going to write to the mode register
-      Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
-      delay(1); // Give bus a breather
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
-      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-      Wire.endTransmission(); // End transmit
-      break;
-    case 1: // Right motor 
-      Serial.print("<amMD25::spinMotor> Spin right motor");
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegMode); // Going to write to the mode register
-      Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
-      delay(1); // Give bus a breather
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegSpeed2); // Indicate motor1 speed register
-      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-      Wire.endTransmission(); // End transmit
-      break;
-    default: // Both motors
-      Serial.println("<amMD25::spinMotor> Spin both motors");
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegMode); // Going to write to the mode register
-      Wire.write(2); // Writing 2 to the mode register will make speed1 control both motors speed
-      delay(1); // Give bus a breather
-      Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
-      Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
-      Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
-      Wire.endTransmission(); // End transmit
-      break;
-  } // motorNumber;
+      case 0: // Left motor 
+         Serial.println("<amMD25::spinMotor> Spin left motor");
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegMode); // Going to write to the mode register
+         Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
+         Wire.endTransmission(); // End transmit
+   //      delay(1); // Give bus a breather
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
+         Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+         Wire.endTransmission(); // End transmit
+         break;
+      case 1: // Right motor 
+         Serial.println("<amMD25::spinMotor> Spin right motor");
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegMode); // Going to write to the mode register
+         Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
+         Wire.endTransmission(); // End transmit
+   //      delay(1); // Give bus a breather
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegSpeed2); // Indicate motor1 speed register
+         Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+         Wire.endTransmission(); // End transmit
+         break;
+      default: // Both motors
+         Serial.println("<amMD25::spinMotor> Spin both motors");
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegMode); // Going to write to the mode register
+         Wire.write(2); // Writing 2 to the mode register will make speed1 control both motors speed
+         Wire.endTransmission(); // End transmit
+   //      delay(1); // Give bus a breather
+         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
+         Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
+         Wire.endTransmission(); // End transmit
+         break;
+  } // switch
 } // spinMotor()
-
-/**
- * @brief Run motor test code
-=================================================================================================== */
-/*
-void amMD25::motorTest()
-{
-  if(printHeaders == true)
-  {
-    Serial.println("<loop> curr count , prev count , Filter , Succ , Fail , percent"); // Headings for output
-    printHeaders = false;
-  } //if
-  currentCnt1 = encoder1();
-  if(currentCnt1 < prevCnt1 + errFilter) // If there is a large jump in the counter
-  {
-    prevCnt1 = currentCnt1;
-    successCount1 ++;
-  } //if
-  else
-  {
-    failCount1 ++;
-    totalCount1 = successCount1 + failCount1;
-    percentage1 = failCount1 / successCount1;
-    Serial.print("<loop> ");
-    Serial.print(currentCnt1);
-    Serial.print(",");
-    Serial.print(prevCnt1);
-    Serial.print(",");
-    Serial.print(errFilter);
-    Serial.print(",");
-    Serial.print(successCount1);
-    Serial.print(",");
-    Serial.print(failCount1);
-    Serial.print(", ");
-    Serial.println(percentage1);
-  } //else
-} // motorTest()
-*/
