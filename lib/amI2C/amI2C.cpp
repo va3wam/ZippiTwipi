@@ -126,15 +126,22 @@ void amI2C::_scanI2Cbus(int busNum)
 =================================================================================================== */
 void amI2C::configure(int bus, int sdaPin, int sclPin, uint32_t speed)
 {
-  if(bus==0)
-  {
-    Serial.print("<amI2C::configure> Configuring bus ");
-    Serial.println(bus);
-    Wire.begin(sdaPin, sclPin, speed);
-  } //if
-  else
-  {
-    Wire1.begin(sdaPin, sclPin, speed);
-  } //else
+   if(bus==0)
+   {
+      Serial.print("<amI2C::configure> Configuring Wire I2C bus ");
+      Wire.begin(sdaPin, sclPin, speed);
+   } //if
+   else
+   {
+      Serial.print("<amI2C::configure> Configuring Wire1 I2C bus ");
+      Wire1.begin(sdaPin, sclPin, speed);
+   } //else
+   Serial.println(bus);
+   Serial.print("<amI2C::configure> ... Speed = ");
+   Serial.println(speed);
+   Serial.print("<amI2C::configure> ... SDA pin = ");
+   Serial.println(sdaPin);
+   Serial.print("<amI2C::configure> ... SCL pin = ");
+   Serial.println(sclPin);
   _scanI2Cbus(bus);
 } //configure()

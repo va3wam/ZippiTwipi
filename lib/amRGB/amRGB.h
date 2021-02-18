@@ -35,21 +35,20 @@ typedef struct
    int pwmDutyCycle; // Up time of the PWM signal. Ranges from 0-255. 127 is a 50% duty cycle for example.
    int gpioPin; // GPIO pin connected to the LED  
 }resetButtonLED; 
-resetButtonLED redResetLED;
-resetButtonLED blueResetLED;
-resetButtonLED greenResetLED;
 
 // Define amMD25 class
 class amRGB
 {
    public:
       amRGB(); // Constructor
-      void bob(uint32_t timerClockSpeed, int resetRedLED, int resetBlueLED, int resetGreenLED, int frontLimitSwitch, int backLimitSwitch); // Clock speed of the hardware timers (MHz);
+      void configure(int redLedPin, int blueLedPin, int greenLedPin, int frontSwitchPin, int backSwitchPin); // Clock speed of the hardware timers (MHz);
       void setResetButtonLEDColour(int redDutyCycle, int blueDutyCycle, int greenDutyCycle);
       void cycleLed(int interrupt0Counter);
 //      uint32_t timerClockSpeed; // Clock speed of the hardware timers (MHz)
+      resetButtonLED redResetLED;
+      resetButtonLED blueResetLED;
+      resetButtonLED greenResetLED;
    private:
- 
       int fadeAmount;
       int brightness;
       // Define structure and variables for hardware interrupt timer 

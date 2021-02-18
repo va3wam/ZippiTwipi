@@ -22,6 +22,10 @@
 #define amI2C_h
 
 // Define I2C bus constants, classes and global variables 
+#define i2cBusName0 Wire // Map friendly name to bus0 name
+#define i2cBusName1 Wire1 // Map friendly name to bus1 name
+#define i2cBusNumber0 0 // Map friendly name to bus0 number
+#define i2cBusNumber1 1 // Map friendly name to bus1 number
 #define I2C_bus0_speed 400000 // Define speed of I2C bus 0. Note 400KHz is the upper speed limit for ESP32 I2C
 #define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for MD25 H-Bridge
 #define numOfI2cBuses 2 // Define how many I2C buses the robot has on it's circuit board
