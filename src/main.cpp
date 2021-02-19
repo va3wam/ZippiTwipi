@@ -18,7 +18,8 @@
  * 
  * YYYY-MM-DD Dev    Description
  * ---------- ------ -------------------------------------------------------------------------------
- * 2021-02-19 va3wam Added networking logic including an OTA web interface 
+ * 2021-02-19 va3wam Added networking logic including an OTA web interface. Fixed frequency LED 
+ *                   on restbutton changes. Added support for LCD. 
  * 2021-01-07 va3wam Reworked I2C and limit switch test code
  * 2020-12-12 va3wam Cleaned up loop() and messed around with reet button tri-coloured LED to test 
  *                   newly assembled circuit.
@@ -35,10 +36,12 @@
 #include <amI2C.h> // Required for serial I2C communication 
 #include <amMD25.h> // Required for motor control
 #include <WebOTA.h> // Required for OTA code downloading. // https://github.com/scottchiefbaker/ESP-WebOTA
+#include <LiquidCrystal_I2C.h> // Required for LCD support
 #define ledTimer 0 // Timer 0 will be used to control LED on reset button
-#define ledFreq 1000000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
+#define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 
-String firmwareVersion = "0.0.2"; // Semver formatted version number for this firmware code
+String firmwareVersion = "0.0.3"; // Semver formatted version number for this firmware code
+unsigned long serialBaudRate = 115200; // Define serial baud rate 
 
 // Define structure and variables for reset buttons built-in LEDs. 
 // https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
@@ -76,6 +79,15 @@ String myIPAddress = "-no IP address-"; // IP address of the SOC.
 String myAccessPoint = "-no access point-"; // WiFi Access Point that we managed to connected to
 String myHostName = "-no hostname-"; // Name by which we are known by the Access Point
 String myHostNamePrefix = "ZipyTwipy"; // Suffix to add to WiFi host name for this robot
+
+// Define structure and variables for the MD25 motor controller 
+byte md25FirmwareVersion; // Firmware version of MD25 motor controller
+
+// Define structure and variables for the LCD 
+int lcdColumns = 16;
+int lcdRows = 2;
+int lcdI2cAddress = 0x3F;
+LiquidCrystal_I2C lcd(lcdI2cAddress, lcdColumns, lcdRows);
 
 /**
  * @brief Hardware timer 0 interrupt handler function
@@ -283,75 +295,94 @@ void setupNetwork()
    String tmpHostNameVar = myHostNamePrefix + myMACaddress; // Format the host name we will use
    WiFi.setHostname((char *)tmpHostNameVar.c_str()); // Set our hostname
    myHostName = WiFi.getHostname(); // Record the host name we are known by at the Access Point
-   // Diplay our key network info to the console   
-   Serial.print("<setupNetwork> Access Point: ");
-   Serial.println(myAccessPoint);
-   Serial.print("<setupNetwork> MAC address: ");
-   Serial.println(myMACaddress);
-   Serial.print("<setupNetwork> IP address: ");
-   Serial.println(myIPAddress);
-   Serial.print("<setupNetwork> Host Name: ");
-   Serial.println(myHostName);
 } //setupNetwork()
+
+/** 
+ * @brief Capture and show the environment details of the robot
+=================================================================================================== */
+void showCfgDetails()
+{
+   arduinoCore = xPortGetCoreID(); // Core is Arduino runing on
+   cpuClockSpeed = getCpuFrequencyMhz(); // Clock frequency of core that Arduino is running on (MHz) 
+   timerClockSpeed = rtc_clk_apb_freq_get() / 1000000; // Convert timer clock speed(Hz) to MHz by dividing by 1 million
+   // Robot general info
+   Serial.print("<showCfgDetails> ... Robot firmware version = "); 
+   Serial.println(firmwareVersion);
+   Serial.print("<showCfgDetails> ... Serial baud rate = ");
+   Serial.println(serialBaudRate);
+   Serial.print("<showCfgDetails> ... Arduino core = ");
+   Serial.println(arduinoCore);
+   Serial.print("<showCfgDetails> ... CPU clock frequency = ");
+   Serial.print(cpuClockSpeed);
+   Serial.println("MHz");
+   // RGB LED in reset button info
+   Serial.print("<showCfgDetails> ... Timer0 clock frequency = ");
+   Serial.print(timerClockSpeed); 
+   Serial.println("MHz");
+   Serial.print("<showCfgDetails> ... Timer0 interrupt frequency = ");
+   Serial.print(ledFreq); 
+   Serial.println("MHz");
+   Serial.println("<showCfgDetails> ... Timer0 auto-reload = true");
+   // Motor controller info
+   Serial.print("<showCfgDetails> ... MD25 firmware version = ");
+   Serial.println(md25FirmwareVersion, HEX);
+   // Network info    
+   Serial.print("<showCfgDetails> ... Access Point name: ");
+   Serial.println(myAccessPoint);
+   Serial.print("<showCfgDetails> ... Robot MAC address: ");
+   Serial.println(myMACaddress);
+   Serial.print("<showCfgDetails> ... Robot IP address: ");
+   Serial.println(myIPAddress);
+   Serial.print("<showCfgDetails> ... Robot Host Name: ");
+   Serial.println(myHostName);   
+   Serial.print("<showCfgDetails> ... Robot OTA URL: ");
+   Serial.println("HTTP://" + myIPAddress + ":8080/webota");   
+} //showCfgDetails()
+
+/** 
+ * @brief Configure and activate Timer0 used to control the RGB LED on the reset button
+=================================================================================================== */
+void setupTimer0()
+{
+   // Setup timer0
+   Serial.print("<setupTimer0> Configure timer");
+   Serial.println(ledTimer); 
+   timer0 = timerBegin(ledTimer, timerClockSpeed, true); // Set timer 0 to a 1 MHz frequency 
+   timerAttachInterrupt(timer0, &onTimer0, true); // Call onTimer0() each time ths interrupt fires
+   timerAlarmWrite(timer0, ledFreq, true); // Set frequency interrupt fires and reset counter to repeat
+   timerAlarmEnable(timer0); // Enable interrupt   
+} //setupTimer0()
 
 /** 
  * @brief Standard set up routine for Arduino programs 
 =================================================================================================== */
 void setup()
 {
-   // Set up serial communication
-   unsigned long serialBaudRate = 115200; // Define serial baud rate 
+   // Setup debug tracing. So far only to the local console but remote options may be added
    setupSerial(serialBaudRate); // Set serial baud rate  
    Serial.println("<setup> Start of setup");
-
-   // Capture environment information  
-   arduinoCore = xPortGetCoreID(); // Core is Arduino runing on
-   cpuClockSpeed = getCpuFrequencyMhz(); // Clock frequency of core that Arduino is running on (MHz) 
-   timerClockSpeed = rtc_clk_apb_freq_get() / 1000000; // Get clock speed of timers(Hz) and convert to MHz
-   Serial.print("<setup> ... Serial baud rate = ");
-   Serial.println(serialBaudRate);
-   Serial.print("<setup> ... Arduino core = ");
-   Serial.println(arduinoCore);
-   Serial.print("<setup> ... CPU clock frequency = ");
-   Serial.print(cpuClockSpeed);
-   Serial.println("MHz");
-
    // Setup I2C buses
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
-
+   // Setup LCD
+   lcd.init(); // Initialize LCD
+   lcd.clear(); // Clear the display
+   lcd.backlight(); // Turn on LCD backlight
+   lcd.setCursor(0,1); // Set cursor to first column, second row
+   lcd.print("Hello, World!");
    // Setup motor controller
-   byte softVer = motorControl.getFirmwareVersion(); // Gets the software version of MD25
-   Serial.print("<setup> MD25 motor controller firmware version = ");
-   Serial.println(softVer, HEX);
+   md25FirmwareVersion = motorControl.getFirmwareVersion(); // Gets the software version of MD25
    motorControl.encoderReset();
-
-   // Setup timer0
-   Serial.print("<setup> Configure timer");
-   Serial.println(ledTimer); 
-   Serial.print("<setup> Clock frequency = ");
-   Serial.print(timerClockSpeed); 
-   Serial.println("MHz");
-   Serial.print("<setup> Interrupt frequency = ");
-   Serial.print(ledFreq); 
-   Serial.println("MHz");
-   Serial.print("<setup> Reload = true");
-   timer0 = timerBegin(ledTimer, timerClockSpeed, true); // Set timer 0 to a 1 MHz frequency 
-   timerAttachInterrupt(timer0, &onTimer0, true); // Call onTimer0() each time ths interrupt fires
-   timerAlarmWrite(timer0, ledFreq, true); // Set frequency interrupt fires and reset counter to repeat
-   timerAlarmEnable(timer0); // Enable interrupt
-   
    // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
    setupRgbLed();
-   
    // Setup balance limit switches
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
-   
    // Setup networking
    setupNetwork(); 
-   Serial.print("<setup> Firmware version: "); // Simple way to check for updated code while testing OTA
-   Serial.println(firmwareVersion);
+   setupTimer0();
+   // Summarize the running conditions of the robot
+   showCfgDetails();
    Serial.println("<setup> End of setup");
 } //setup()
 
