@@ -18,6 +18,7 @@
  * 
  * YYYY-MM-DD Dev    Description
  * ---------- ------ -------------------------------------------------------------------------------
+ * 2021-02-19 va3wam Added networking logic including an OTA web interface 
  * 2021-01-07 va3wam Reworked I2C and limit switch test code
  * 2020-12-12 va3wam Cleaned up loop() and messed around with reet button tri-coloured LED to test 
  *                   newly assembled circuit.
@@ -26,16 +27,18 @@
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial I2C communication. Comes with Platform.io 
+#include <WiFi.h> // Required to connect to WiFi network. Comes with Platform.io
 #include <huzzah32_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
-#include <amI2C.h> // Required for serial I2C communication 
-#include <amMD25.h> // Required for motor control
-//#include <amRGB.h> // Required to control tri-colours LED on reset button
 #include <esp32-hal-cpu.h> // Required for getCpuFrequencyMhz()
 #include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
-
+#include <amI2C.h> // Required for serial I2C communication 
+#include <amMD25.h> // Required for motor control
+#include <WebOTA.h> // Required for OTA code downloading. // https://github.com/scottchiefbaker/ESP-WebOTA
 #define ledTimer 0 // Timer 0 will be used to control LED on reset button
 #define ledFreq 1000000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
+
+String firmwareVersion = "0.0.2"; // Semver formatted version number for this firmware code
 
 // Define structure and variables for reset buttons built-in LEDs. 
 // https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
@@ -51,13 +54,9 @@ resetButtonLED redResetLED;
 resetButtonLED blueResetLED;
 resetButtonLED greenResetLED;
 
-int fadeAmount = 5; // How much to fade the LEDs by each loop
-int brightness = 0; // How bright the LED is
-
 // Instantiate library objects
 amI2C i2cBus; // Object to manage I2C buses
 amMD25 motorControl; // Object to manage motors via h-bridge controller
-//amRGB resetButton; // Object to manage tri-colour LED on reset button
 
 // Define variables to store environment information 
 uint32_t arduinoCore; // The ESP32 comes with 2 Xtensa 32-bit LX6 microprocessors: core 0 and core 1. Arduino IDE runs on core 1.
@@ -70,6 +69,13 @@ int totalInterrupt0Counter; // Track how many times the interrupt has fired in t
 int currColourCnt; // Track what colour is currently active for the reset button LED
 hw_timer_t * timer0 = NULL; // Pointer to hardware timer0
 portMUX_TYPE timer0Mux = portMUX_INITIALIZER_UNLOCKED; // Used to prevent race conditins updating counters
+
+// Define IP address variables
+String myMACaddress; // MAC address of this SOC. Used to uniquely identify this robot
+String myIPAddress = "-no IP address-"; // IP address of the SOC.
+String myAccessPoint = "-no access point-"; // WiFi Access Point that we managed to connected to
+String myHostName = "-no hostname-"; // Name by which we are known by the Access Point
+String myHostNamePrefix = "ZipyTwipy"; // Suffix to add to WiFi host name for this robot
 
 /**
  * @brief Hardware timer 0 interrupt handler function
@@ -126,9 +132,9 @@ void setResetButtonLEDColour(int redDutyCycle, int blueDutyCycle, int greenDutyC
 } //setResetButtonLEDColour()
 
 /**
- * @brief Configure pins that control  RGB LEDs on the reset button.
+ * @brief Configure pins that control RGB LEDs on the reset button.
 ===================================================================================================*/
-void configRGB() 
+void setupRgbLed() 
 {
    redResetLED = {2, 500, 8, 0, resetRedLED}; // Chan 2, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), red LED pin 
    blueResetLED = {1, 500, 8, 0, resetBlueLED}; // Chan 1, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), blue LED pin
@@ -145,8 +151,8 @@ void configRGB()
    // Setup balance limit switches
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
-} //configRGB()
-
+} //setupRgbLed()
+ 
 /**
  * @brief Initialize the serial output with the specified baud rate measured in bits per second
 =================================================================================================== */
@@ -200,17 +206,93 @@ void cycleLed()
             ledcWrite(blueResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to blue LED
             ledcWrite(greenResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to green LED
             break;
-         default: // WHITE
-            currColourCnt = 0;
+         case 5: // AQUA MARINE BLUE
+            currColourCnt ++;
             ledcWrite(redResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to red LED
             ledcWrite(blueResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to blue LED
             ledcWrite(greenResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to green LED
             break;
+         default: // WHITE
+            currColourCnt = 0;
+            ledcWrite(redResetLED.pwmChannel, 127); // Set the duty cycle of PWM channel assigned to red LED
+            ledcWrite(blueResetLED.pwmChannel, 127); // Set the duty cycle of PWM channel assigned to blue LED
+            ledcWrite(greenResetLED.pwmChannel, 127 ); // Set the duty cycle of PWM channel assigned to green LED
+            break;
       } //switch
-      Serial.print("An interrupt has occurred. Total number: ");
-      Serial.println(totalInterrupt0Counter);
    } //if   
 } //amRGB::cycleLed()
+
+/** 
+ * @brief Strips the colons off the MAC address of this device
+ * @return String
+ * =============================================================================== */
+String formatMAC()
+{
+   String mac;
+   Serial.println("<formatMAC> Removing colons from MAC address");
+   mac = WiFi.macAddress(); // Get MAC address of this SOC
+   mac.remove(2, 1);        // Remove first colon from MAC address
+   mac.remove(4, 1);        // Remove second colon from MAC address
+   mac.remove(6, 1);        // Remove third colon from MAC address
+   mac.remove(8, 1);        // Remove forth colon from MAC address
+   mac.remove(10, 1);       // Remove fifth colon from MAC address
+   Serial.print("<formatMAC> Formatted MAC address without colons = ");
+   Serial.println(mac);
+   return mac;
+}  //formatMAC()
+
+/** 
+ * @brief Converts a string to upper case
+ * @details See https://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+ * @return modified argument string
+ * =============================================================================== */
+String StringToUpper(String strToConvert)      // convert the argument string to upper case
+{
+    std::transform(strToConvert.begin(), strToConvert.end(), strToConvert.begin(), ::toupper);
+    return strToConvert;
+}
+
+/** 
+ * @brief This function returns a String version of the local IP address
+ * =============================================================================== */
+String ipToString(IPAddress ip)
+{
+   String s = "";
+   for (int i = 0; i < 4; i++)
+   {
+      s += i ? "." + String(ip[i]) : String(ip[i]);
+   } //for
+   Serial.print("<ipToString> IP Address = ");
+   Serial.println(s);
+   return s;
+}  //ipToString()
+
+/** 
+ * @brief Setup all network aspects of the robot
+ * @details Connect to WiFi Access Point, Set up a web server to accept OTA firmware update, create
+ * a unique host name for this robot usiing its MAC address 
+=================================================================================================== */
+void setupNetwork()
+{
+   // Setup Over The Air updates
+   init_wifi("MN_LIVINGROOM", "5194741299", "/webota"); // Defaults to 8080 and "/webota"
+   // Put key networking information into variables 
+   myIPAddress = ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
+   myAccessPoint = WiFi.SSID(); // Record the name of the Access Point we connect to
+   myMACaddress = formatMAC();
+   String tmpHostNameVar = myHostNamePrefix + myMACaddress; // Format the host name we will use
+   WiFi.setHostname((char *)tmpHostNameVar.c_str()); // Set our hostname
+   myHostName = WiFi.getHostname(); // Record the host name we are known by at the Access Point
+   // Diplay our key network info to the console   
+   Serial.print("<setupNetwork> Access Point: ");
+   Serial.println(myAccessPoint);
+   Serial.print("<setupNetwork> MAC address: ");
+   Serial.println(myMACaddress);
+   Serial.print("<setupNetwork> IP address: ");
+   Serial.println(myIPAddress);
+   Serial.print("<setupNetwork> Host Name: ");
+   Serial.println(myHostName);
+} //setupNetwork()
 
 /** 
  * @brief Standard set up routine for Arduino programs 
@@ -258,11 +340,19 @@ void setup()
    timerAttachInterrupt(timer0, &onTimer0, true); // Call onTimer0() each time ths interrupt fires
    timerAlarmWrite(timer0, ledFreq, true); // Set frequency interrupt fires and reset counter to repeat
    timerAlarmEnable(timer0); // Enable interrupt
-
+   
    // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
-   configRGB();
+   setupRgbLed();
+   
+   // Setup balance limit switches
+   pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
+   pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
+   
+   // Setup networking
+   setupNetwork(); 
+   Serial.print("<setup> Firmware version: "); // Simple way to check for updated code while testing OTA
+   Serial.println(firmwareVersion);
    Serial.println("<setup> End of setup");
-
 } //setup()
 
 /**
@@ -271,6 +361,7 @@ void setup()
 void loop()
 {
 //  motorTest();
-   limitSwitchMonitoring();
-   cycleLed();
+   limitSwitchMonitoring(); // Check for limit switch activation 
+   cycleLed(); // Update LED as needed
+   webota.handle(); // Check for OTA messages
 } //loop()
