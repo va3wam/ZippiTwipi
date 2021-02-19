@@ -84,10 +84,17 @@ String myHostNamePrefix = "ZipyTwipy"; // Suffix to add to WiFi host name for th
 byte md25FirmwareVersion; // Firmware version of MD25 motor controller
 
 // Define structure and variables for the LCD 
-int lcdColumns = 16;
-int lcdRows = 2;
-int lcdI2cAddress = 0x3F;
-LiquidCrystal_I2C lcd(lcdI2cAddress, lcdColumns, lcdRows);
+typedef struct
+{
+   int numCols = 16;
+   int numRows = 2;
+   int i2cAdd = 0x3F;
+   int curRow;
+   int curCol;
+   String lcdMsg; 
+}lcdStruct; 
+lcdStruct lcdProperty;
+LiquidCrystal_I2C lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows);
 
 /**
  * @brief Hardware timer 0 interrupt handler function
@@ -354,6 +361,16 @@ void setupTimer0()
 } //setupTimer0()
 
 /** 
+ * @brief Initialize LCD 
+=================================================================================================== */
+void setupLCD()
+{
+   lcd.init(); // Initialize LCD
+   lcd.clear(); // Clear the display
+   lcd.backlight(); // Turn on LCD backlight
+} //setupLCD()
+
+/** 
  * @brief Standard set up routine for Arduino programs 
 =================================================================================================== */
 void setup()
@@ -365,24 +382,36 @@ void setup()
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
    // Setup LCD
-   lcd.init(); // Initialize LCD
-   lcd.clear(); // Clear the display
-   lcd.backlight(); // Turn on LCD backlight
-   lcd.setCursor(0,1); // Set cursor to first column, second row
-   lcd.print("Hello, World!");
+   setupLCD();
    // Setup motor controller
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: Motors    "); // Issue message
    md25FirmwareVersion = motorControl.getFirmwareVersion(); // Gets the software version of MD25
    motorControl.encoderReset();
    // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: RGB LED   "); // Issue message
    setupRgbLed();
    // Setup balance limit switches
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: Bumpers   "); // Issue message
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
    // Setup networking
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: Network   "); // Issue message
    setupNetwork(); 
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: Timer0()  "); // Issue message
    setupTimer0();
    // Summarize the running conditions of the robot
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="Boot: Summary   "); // Issue message
    showCfgDetails();
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
+   lcd.print(lcdProperty.lcdMsg="IP:" + myIPAddress); // Issue message
+   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=1); // Set cursor to first column, second row
+   lcd.print(lcdProperty.lcdMsg="MAC:" + myMACaddress); // Issue message
    Serial.println("<setup> End of setup");
 } //setup()
 
