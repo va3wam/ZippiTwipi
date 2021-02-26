@@ -1,6 +1,6 @@
 /***************************************************************************************************
  * @file main.cpp
- * @author va3wam
+ * @author the Aging Appreentice
  * @brief Zippi Twipi robot firmware 
  * @details Basic operating code for the Zippi Twipi robot 
  * @copyright Copyright (c) 2020 va3wam@gmail.com
@@ -16,15 +16,14 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
- * YYYY-MM-DD Dev    Description
- * ---------- ------ -------------------------------------------------------------------------------
- * 2021-02-19 va3wam Added networking logic including an OTA web interface. Fixed frequency LED 
- *                   on restbutton changes. Added support for LCD. 
- * 2021-01-07 va3wam Reworked I2C and limit switch test code
- * 2020-12-12 va3wam Cleaned up loop() and messed around with reet button tri-coloured LED to test 
- *                   newly assembled circuit.
- * 2020-11-23 va3wam Added include of development board pin definition file
- * 2020-10-22 va3wam Program created
+ * YYYY-MM-DD Dev        Description
+ * ---------- ---------- ---------------------------------------------------------------------------
+ * 2021-02-25 Old Squire Moved control logic for RBG LED integrated into reset button to library. 
+ * 2021-01-07 Old Squire Reworked I2C and limit switch test code
+ * 2020-12-12 Old Squire Cleaned up loop() and messed around with reset button tri-coloured LED to 
+ *                       test newly assembled circuit.
+ * 2020-11-23 Old Squire Added include of development board pin definition file
+ * 2020-10-22 Old Squire Program created
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <Wire.h> // Required for serial I2C communication. Comes with Platform.io 
@@ -35,27 +34,15 @@
 #include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
 #include <amI2C.h> // Required for serial I2C communication 
 #include <amMD25.h> // Required for motor control
+#include <amResetButton.h> // Required for controlling reset button LED
 #include <WebOTA.h> // Required for OTA code downloading. // https://github.com/scottchiefbaker/ESP-WebOTA
 #include <LiquidCrystal_I2C.h> // Required for LCD support
 #define ledTimer 0 // Timer 0 will be used to control LED on reset button
 #define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 
-String firmwareVersion = "0.0.3"; // Semver formatted version number for this firmware code
+String firmwareVersion = "0.0.5"; // Semver formatted version number for this firmware code
 unsigned long serialBaudRate = 115200; // Define serial baud rate 
-
-// Define structure and variables for reset buttons built-in LEDs. 
-// https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
-typedef struct
-{
-   int pwmChannel; // There are 16 PWM channels available. Choose any channel between 0 and 15.
-   int pwmFrequency; // Frequency of the digital signal
-   int pwmResolution; // ESP32 PWM resolution between 1 bit to 16 bits. The optimal resolution is 8 bit.
-   int pwmDutyCycle; // Up time of the PWM signal. Ranges from 0-255. 127 is a 50% duty cycle for example.
-   int gpioPin; // GPIO pin connected to the LED  
-}resetButtonLED; 
-resetButtonLED redResetLED;
-resetButtonLED blueResetLED;
-resetButtonLED greenResetLED;
+amResetButton myResetButton; // Control the reset button's integrated RGB LED
 
 // Instantiate library objects
 amI2C i2cBus; // Object to manage I2C buses
@@ -141,38 +128,6 @@ void limitSwitchMonitoring()
 } //limitSwitchMonitoring()
 
 /**
- * @brief Set the colour of the reset button's LED
-=================================================================================================== */
-void setResetButtonLEDColour(int redDutyCycle, int blueDutyCycle, int greenDutyCycle)
-{
-   ledcWrite(redResetLED.pwmChannel, redDutyCycle); // Set the duty cycle of red LED PWM channel
-   ledcWrite(blueResetLED.pwmChannel, blueDutyCycle); // Set the duty cycle of blue LED PWM channel
-   ledcWrite(greenResetLED.pwmChannel, greenDutyCycle); // Set the duty cycle of green LED PWM channel
-} //setResetButtonLEDColour()
-
-/**
- * @brief Configure pins that control RGB LEDs on the reset button.
-===================================================================================================*/
-void setupRgbLed() 
-{
-   redResetLED = {2, 500, 8, 0, resetRedLED}; // Chan 2, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), red LED pin 
-   blueResetLED = {1, 500, 8, 0, resetBlueLED}; // Chan 1, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), blue LED pin
-   greenResetLED = {0, 500, 8, 0, resetGreenLED}; // Chan 0, freq 4000Hz, 8 bit res, 255 tick up (100% duty cycle), green LED pin
-   // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
-   ledcSetup(redResetLED.pwmChannel, redResetLED.pwmFrequency, redResetLED.pwmResolution); // Setup PWM channel for RED reset LED
-   ledcAttachPin(redResetLED.gpioPin, redResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button RED LED
-   // Setup rest button's blue LED
-   ledcSetup(blueResetLED.pwmChannel, blueResetLED.pwmFrequency, blueResetLED.pwmResolution); // Setup PWM channel for BLUE reset LED
-   ledcAttachPin(blueResetLED.gpioPin, blueResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button BLUE LED
-   // Setup rest button's green LED
-   ledcSetup(greenResetLED.pwmChannel, greenResetLED.pwmFrequency, greenResetLED.pwmResolution); // Setup PWM channel for GREEN reset LED
-   ledcAttachPin(greenResetLED.gpioPin, greenResetLED.pwmChannel); // Attach PWM channel to pin connected to reset button GREEN LED
-   // Setup balance limit switches
-   pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
-   pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
-} //setupRgbLed()
- 
-/**
  * @brief Initialize the serial output with the specified baud rate measured in bits per second
 =================================================================================================== */
 void setupSerial(unsigned long baudRate)
@@ -193,53 +148,10 @@ void cycleLed()
       interrupt0Counter--;
       portEXIT_CRITICAL(&timer0Mux);
       totalInterrupt0Counter++;
-      switch(currColourCnt)
-      {
-         case 0: // RED
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         case 1: // BLUE
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         case 2: // GREEN
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         case 3: // PINK
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         case 4: // CYANNE
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 0); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         case 5: // AQUA MARINE BLUE
-            currColourCnt ++;
-            ledcWrite(redResetLED.pwmChannel, 255); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 128); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-         default: // WHITE
-            currColourCnt = 0;
-            ledcWrite(redResetLED.pwmChannel, 127); // Set the duty cycle of PWM channel assigned to red LED
-            ledcWrite(blueResetLED.pwmChannel, 127); // Set the duty cycle of PWM channel assigned to blue LED
-            ledcWrite(greenResetLED.pwmChannel, 127 ); // Set the duty cycle of PWM channel assigned to green LED
-            break;
-      } //switch
+      myResetButton.cycleColour();
+//      myResetButton.setColour(AQUA);
    } //if   
-} //amRGB::cycleLed()
+} //cycleLed()
 
 /** 
  * @brief Strips the colons off the MAC address of this device
@@ -315,6 +227,15 @@ void showCfgDetails()
    // Robot general info
    Serial.print("<showCfgDetails> ... Robot firmware version = "); 
    Serial.println(firmwareVersion);
+   Serial.print("<showCfgDetails> ... Chip revision = "); 
+   Serial.println(ESP.getChipRevision()); 
+   Serial.print("<showCfgDetails> ... SDK version = "); 
+   Serial.println(ESP.getSdkVersion()); 
+   Serial.print("<showCfgDetails> ... Sketch size = "); 
+   Serial.println(ESP.getSketchSize()); 
+   Serial.print("<showCfgDetails> ... Free heap = "); 
+   Serial.println(ESP.getFreeHeap()); 
+   
    Serial.print("<showCfgDetails> ... Serial baud rate = ");
    Serial.println(serialBaudRate);
    Serial.print("<showCfgDetails> ... Arduino core = ");
@@ -391,7 +312,7 @@ void setup()
    // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
    lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
    lcd.print(lcdProperty.lcdMsg="Boot: RGB LED   "); // Issue message
-   setupRgbLed();
+//   setupRgbLed();
    // Setup balance limit switches
    lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
    lcd.print(lcdProperty.lcdMsg="Boot: Bumpers   "); // Issue message
