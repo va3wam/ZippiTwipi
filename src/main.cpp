@@ -18,6 +18,7 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- ---------------------------------------------------------------------------
+ * 2021-02-26 Old Squire Moved formatting, LCD and chip functions out into their own class libraries. 
  * 2021-02-25 Old Squire Moved control logic for RBG LED integrated into reset button to library. 
  * 2021-01-07 Old Squire Reworked I2C and limit switch test code
  * 2020-12-12 Old Squire Cleaned up loop() and messed around with reset button tri-coloured LED to 
