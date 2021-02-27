@@ -1,6 +1,6 @@
 /***************************************************************************************************
  * @file main.cpp
- * @author the Aging Appreentice
+ * @author the Aging Apprentice
  * @brief Zippi Twipi robot firmware 
  * @details Basic operating code for the Zippi Twipi robot 
  * @copyright Copyright (c) 2020 va3wam@gmail.com
@@ -34,19 +34,22 @@
 #include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
 #include <amI2C.h> // Required for serial I2C communication 
 #include <amMD25.h> // Required for motor control
+#include <amLCD.h> // Required for LCD control
 #include <amResetButton.h> // Required for controlling reset button LED
+#include <amFormat.h> // Library of handy variable format conversion functions
+#include <amChip.h> // Used to access details about the core (CPU) that the Arduino framework runs on
 #include <WebOTA.h> // Required for OTA code downloading. // https://github.com/scottchiefbaker/ESP-WebOTA
-#include <LiquidCrystal_I2C.h> // Required for LCD support
 #define ledTimer 0 // Timer 0 will be used to control LED on reset button
 #define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 
 String firmwareVersion = "0.0.5"; // Semver formatted version number for this firmware code
-unsigned long serialBaudRate = 115200; // Define serial baud rate 
-amResetButton myResetButton; // Control the reset button's integrated RGB LED
 
 // Instantiate library objects
 amI2C i2cBus; // Object to manage I2C buses
 amMD25 motorControl; // Object to manage motors via h-bridge controller
+amResetButton myResetButton; // Control the reset button's integrated RGB LED
+amFormat format; // Accept various variable type/formats and return a different variable type/format
+amChip appCpu; // Access information about the ESP32 application microprocessor
 
 // Define variables to store environment information 
 uint32_t arduinoCore; // The ESP32 comes with 2 Xtensa 32-bit LX6 microprocessors: core 0 and core 1. Arduino IDE runs on core 1.
@@ -73,15 +76,12 @@ byte md25FirmwareVersion; // Firmware version of MD25 motor controller
 // Define structure and variables for the LCD 
 typedef struct
 {
-   int numCols = 16;
-   int numRows = 2;
-   int i2cAdd = 0x3F;
-   int curRow;
-   int curCol;
-   String lcdMsg; 
+   int numCols = lcdNumCols;
+   int numRows = lcdNumRows;
+   int i2cAdd = lcdI2cAddress;
 }lcdStruct; 
-lcdStruct lcdProperty;
-LiquidCrystal_I2C lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows);
+lcdStruct lcdProperty; // Declare structure that holds relevant variables for the LCD
+amLCD lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows); // Create LCD object
 
 /**
  * @brief Hardware timer 0 interrupt handler function
@@ -154,51 +154,6 @@ void cycleLed()
 } //cycleLed()
 
 /** 
- * @brief Strips the colons off the MAC address of this device
- * @return String
- * =============================================================================== */
-String formatMAC()
-{
-   String mac;
-   Serial.println("<formatMAC> Removing colons from MAC address");
-   mac = WiFi.macAddress(); // Get MAC address of this SOC
-   mac.remove(2, 1);        // Remove first colon from MAC address
-   mac.remove(4, 1);        // Remove second colon from MAC address
-   mac.remove(6, 1);        // Remove third colon from MAC address
-   mac.remove(8, 1);        // Remove forth colon from MAC address
-   mac.remove(10, 1);       // Remove fifth colon from MAC address
-   Serial.print("<formatMAC> Formatted MAC address without colons = ");
-   Serial.println(mac);
-   return mac;
-}  //formatMAC()
-
-/** 
- * @brief Converts a string to upper case
- * @details See https://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
- * @return modified argument string
- * =============================================================================== */
-String StringToUpper(String strToConvert)      // convert the argument string to upper case
-{
-    std::transform(strToConvert.begin(), strToConvert.end(), strToConvert.begin(), ::toupper);
-    return strToConvert;
-}
-
-/** 
- * @brief This function returns a String version of the local IP address
- * =============================================================================== */
-String ipToString(IPAddress ip)
-{
-   String s = "";
-   for (int i = 0; i < 4; i++)
-   {
-      s += i ? "." + String(ip[i]) : String(ip[i]);
-   } //for
-   Serial.print("<ipToString> IP Address = ");
-   Serial.println(s);
-   return s;
-}  //ipToString()
-
-/** 
  * @brief Setup all network aspects of the robot
  * @details Connect to WiFi Access Point, Set up a web server to accept OTA firmware update, create
  * a unique host name for this robot usiing its MAC address 
@@ -208,9 +163,11 @@ void setupNetwork()
    // Setup Over The Air updates
    init_wifi("MN_LIVINGROOM", "5194741299", "/webota"); // Defaults to 8080 and "/webota"
    // Put key networking information into variables 
-   myIPAddress = ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
+//   myIPAddress = ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
+   myIPAddress = format.ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
    myAccessPoint = WiFi.SSID(); // Record the name of the Access Point we connect to
-   myMACaddress = formatMAC();
+//   myMACaddress = formatMAC();
+   myMACaddress = format.noColonMAC(WiFi.macAddress()); // Convert MAC address to string with no colons
    String tmpHostNameVar = myHostNamePrefix + myMACaddress; // Format the host name we will use
    WiFi.setHostname((char *)tmpHostNameVar.c_str()); // Set our hostname
    myHostName = WiFi.getHostname(); // Record the host name we are known by at the Access Point
@@ -227,34 +184,13 @@ void showCfgDetails()
    // Robot general info
    Serial.print("<showCfgDetails> ... Robot firmware version = "); 
    Serial.println(firmwareVersion);
-   Serial.print("<showCfgDetails> ... Chip revision = "); 
-   Serial.println(ESP.getChipRevision()); 
-   Serial.print("<showCfgDetails> ... SDK version = "); 
-   Serial.println(ESP.getSdkVersion()); 
-   Serial.print("<showCfgDetails> ... Sketch size = "); 
-   Serial.println(ESP.getSketchSize()); 
-   Serial.print("<showCfgDetails> ... Free heap = "); 
-   Serial.println(ESP.getFreeHeap()); 
-   
-   Serial.print("<showCfgDetails> ... Serial baud rate = ");
-   Serial.println(serialBaudRate);
-   Serial.print("<showCfgDetails> ... Arduino core = ");
-   Serial.println(arduinoCore);
-   Serial.print("<showCfgDetails> ... CPU clock frequency = ");
-   Serial.print(cpuClockSpeed);
-   Serial.println("MHz");
-   // RGB LED in reset button info
-   Serial.print("<showCfgDetails> ... Timer0 clock frequency = ");
-   Serial.print(timerClockSpeed); 
-   Serial.println("MHz");
-   Serial.print("<showCfgDetails> ... Timer0 interrupt frequency = ");
-   Serial.print(ledFreq); 
-   Serial.println("MHz");
-   Serial.println("<showCfgDetails> ... Timer0 auto-reload = true");
-   // Motor controller info
+
+   appCpu.cfgToConsole(); // Display core0 information on the console
+   // Move this to the amMD25 class 
    Serial.print("<showCfgDetails> ... MD25 firmware version = ");
    Serial.println(md25FirmwareVersion, HEX);
-   // Network info    
+
+   // Move this to the amWiFi class which will extend the ESP-WebOTA class (also add AP scanning logic in here)    
    Serial.print("<showCfgDetails> ... Access Point name: ");
    Serial.println(myAccessPoint);
    Serial.print("<showCfgDetails> ... Robot MAC address: ");
@@ -282,16 +218,6 @@ void setupTimer0()
 } //setupTimer0()
 
 /** 
- * @brief Initialize LCD 
-=================================================================================================== */
-void setupLCD()
-{
-   lcd.init(); // Initialize LCD
-   lcd.clear(); // Clear the display
-   lcd.backlight(); // Turn on LCD backlight
-} //setupLCD()
-
-/** 
  * @brief Standard set up routine for Arduino programs 
 =================================================================================================== */
 void setup()
@@ -302,37 +228,25 @@ void setup()
    // Setup I2C buses
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
-   // Setup LCD
-   setupLCD();
    // Setup motor controller
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: Motors    "); // Issue message
+   lcd.centre("Boot Process",0);
+   lcd.centre("Motors",1);
    md25FirmwareVersion = motorControl.getFirmwareVersion(); // Gets the software version of MD25
    motorControl.encoderReset();
-   // Setup rest button's red LED. For a good article about PWM see https://makeabilitylab.github.io/physcomp/esp32/led-fade.html
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: RGB LED   "); // Issue message
-//   setupRgbLed();
    // Setup balance limit switches
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: Bumpers   "); // Issue message
+   lcd.centre("Limit Switches",1);
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
    // Setup networking
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: Network   "); // Issue message
+   lcd.centre("Network",1);
    setupNetwork(); 
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: Timer0()  "); // Issue message
+   lcd.centre("Timer0",1);
    setupTimer0();
    // Summarize the running conditions of the robot
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="Boot: Summary   "); // Issue message
+   lcd.centre("Summary",1);
    showCfgDetails();
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=0); // Set cursor to first column, first row
-   lcd.print(lcdProperty.lcdMsg="IP:" + myIPAddress); // Issue message
-   lcd.setCursor(lcdProperty.curCol=0,lcdProperty.curRow=1); // Set cursor to first column, second row
-   lcd.print(lcdProperty.lcdMsg="MAC:" + myMACaddress); // Issue message
+   lcd.centre("IP:" + myIPAddress,0);
+   lcd.centre("MAC:" + myMACaddress,1);
    Serial.println("<setup> End of setup");
 } //setup()
 
