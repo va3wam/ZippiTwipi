@@ -1,9 +1,9 @@
 /***************************************************************************************************
  * @file main.cpp
  * @author the Aging Apprentice
- * @brief Zippi Twipi robot firmware 
- * @details Basic operating code for the Zippi Twipi robot 
- * @copyright Copyright (c) 2020 va3wam@gmail.com
+ * @brief Zippy Twipy robot firmware 
+ * @details Basic operating code for the Zippy Twipy robot 
+ * @copyright Copyright (c) 2020 theAgingApprentice@protonmail.com
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
  * associated documentation files (the "Software"), to deal in the Software without restriction, 
  * including without limitation the rights to use, copy, modify, merge, publish, distribute, 
@@ -18,6 +18,8 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- ---------------------------------------------------------------------------
+ * 2021-02-28 Old Squire Moved all networking logic to amWiFi().
+ * 2021-02-27 Old Squire Moved timer information to amResetButton().
  * 2021-02-26 Old Squire Moved formatting, LCD and chip functions out into their own class libraries. 
  * 2021-02-25 Old Squire Moved control logic for RBG LED integrated into reset button to library. 
  * 2021-01-07 Old Squire Reworked I2C and limit switch test code
@@ -31,19 +33,17 @@
 #include <WiFi.h> // Required to connect to WiFi network. Comes with Platform.io
 #include <huzzah32_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
-#include <esp32-hal-cpu.h> // Required for getCpuFrequencyMhz()
-#include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
 #include <amI2C.h> // Required for serial I2C communication 
 #include <amMD25.h> // Required for motor control
 #include <amLCD.h> // Required for LCD control
 #include <amResetButton.h> // Required for controlling reset button LED
 #include <amFormat.h> // Library of handy variable format conversion functions
 #include <amChip.h> // Used to access details about the core (CPU) that the Arduino framework runs on
-#include <WebOTA.h> // Required for OTA code downloading. // https://github.com/scottchiefbaker/ESP-WebOTA
+#include <amWiFi.h> // Required for all networking including the webota functions. 
 #define ledTimer 0 // Timer 0 will be used to control LED on reset button
 #define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 
-String firmwareVersion = "0.0.5"; // Semver formatted version number for this firmware code
+String firmwareVersion = "0.0.1"; // Semver formatted version number for this firmware code
 
 // Instantiate library objects
 amI2C i2cBus; // Object to manage I2C buses
@@ -51,6 +51,7 @@ amMD25 motorControl; // Object to manage motors via h-bridge controller
 amResetButton myResetButton; // Control the reset button's integrated RGB LED
 amFormat format; // Accept various variable type/formats and return a different variable type/format
 amChip appCpu; // Access information about the ESP32 application microprocessor
+amWiFi network; // WiFi and OTA control
 
 // Define variables to store environment information 
 uint32_t arduinoCore; // The ESP32 comes with 2 Xtensa 32-bit LX6 microprocessors: core 0 and core 1. Arduino IDE runs on core 1.
@@ -63,13 +64,6 @@ int totalInterrupt0Counter; // Track how many times the interrupt has fired in t
 int currColourCnt; // Track what colour is currently active for the reset button LED
 hw_timer_t * timer0 = NULL; // Pointer to hardware timer0
 portMUX_TYPE timer0Mux = portMUX_INITIALIZER_UNLOCKED; // Used to prevent race conditins updating counters
-
-// Define IP address variables
-String myMACaddress; // MAC address of this SOC. Used to uniquely identify this robot
-String myIPAddress = "-no IP address-"; // IP address of the SOC.
-String myAccessPoint = "-no access point-"; // WiFi Access Point that we managed to connected to
-String myHostName = "-no hostname-"; // Name by which we are known by the Access Point
-String myHostNamePrefix = "ZipyTwipy"; // Suffix to add to WiFi host name for this robot
 
 // Define structure and variables for the MD25 motor controller 
 byte md25FirmwareVersion; // Firmware version of MD25 motor controller
@@ -155,53 +149,18 @@ void cycleLed()
 } //cycleLed()
 
 /** 
- * @brief Setup all network aspects of the robot
- * @details Connect to WiFi Access Point, Set up a web server to accept OTA firmware update, create
- * a unique host name for this robot usiing its MAC address 
-=================================================================================================== */
-void setupNetwork()
-{
-   // Setup Over The Air updates
-   init_wifi("MN_LIVINGROOM", "5194741299", "/webota"); // Defaults to 8080 and "/webota"
-   // Put key networking information into variables 
-//   myIPAddress = ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
-   myIPAddress = format.ipToString(WiFi.localIP()); // Convert IP address to string for displaying on OLED
-   myAccessPoint = WiFi.SSID(); // Record the name of the Access Point we connect to
-//   myMACaddress = formatMAC();
-   myMACaddress = format.noColonMAC(WiFi.macAddress()); // Convert MAC address to string with no colons
-   String tmpHostNameVar = myHostNamePrefix + myMACaddress; // Format the host name we will use
-   WiFi.setHostname((char *)tmpHostNameVar.c_str()); // Set our hostname
-   myHostName = WiFi.getHostname(); // Record the host name we are known by at the Access Point
-} //setupNetwork()
-
-/** 
  * @brief Capture and show the environment details of the robot
 =================================================================================================== */
 void showCfgDetails()
 {
-   arduinoCore = xPortGetCoreID(); // Core is Arduino runing on
-   cpuClockSpeed = getCpuFrequencyMhz(); // Clock frequency of core that Arduino is running on (MHz) 
-   timerClockSpeed = rtc_clk_apb_freq_get() / 1000000; // Convert timer clock speed(Hz) to MHz by dividing by 1 million
-   // Robot general info
+   Serial.println("<showCfgDetails> Robot Configuration Report");
+   Serial.println("<showCfgDetails> ==========================");
    Serial.print("<showCfgDetails> ... Robot firmware version = "); 
    Serial.println(firmwareVersion);
-
    appCpu.cfgToConsole(); // Display core0 information on the console
-   // Move this to the amMD25 class 
-   Serial.print("<showCfgDetails> ... MD25 firmware version = ");
-   Serial.println(md25FirmwareVersion, HEX);
-
-   // Move this to the amWiFi class which will extend the ESP-WebOTA class (also add AP scanning logic in here)    
-   Serial.print("<showCfgDetails> ... Access Point name: ");
-   Serial.println(myAccessPoint);
-   Serial.print("<showCfgDetails> ... Robot MAC address: ");
-   Serial.println(myMACaddress);
-   Serial.print("<showCfgDetails> ... Robot IP address: ");
-   Serial.println(myIPAddress);
-   Serial.print("<showCfgDetails> ... Robot Host Name: ");
-   Serial.println(myHostName);   
-   Serial.print("<showCfgDetails> ... Robot OTA URL: ");
-   Serial.println("HTTP://" + myIPAddress + ":8080/webota");   
+   myResetButton.cfgToConsole(); // Display timer0 information on the console
+   motorControl.cfgToConsole(); // Display motor controller information on the console
+   network.cfgToConsole(); // Display network information on the console
 } //showCfgDetails()
 
 /** 
@@ -223,31 +182,31 @@ void setupTimer0()
 =================================================================================================== */
 void setup()
 {
-   // Setup debug tracing. So far only to the local console but remote options may be added
    setupSerial(serialBaudRate); // Set serial baud rate  
    Serial.println("<setup> Start of setup");
-   // Setup I2C buses
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
-   // Setup motor controller
+
    lcd.centre("Boot Process",0);
    lcd.centre("Motors",1);
-   md25FirmwareVersion = motorControl.getFirmwareVersion(); // Gets the software version of MD25
    motorControl.encoderReset();
-   // Setup balance limit switches
+
    lcd.centre("Limit Switches",1);
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
-   // Setup networking
+
    lcd.centre("Network",1);
-   setupNetwork(); 
+   network.connect();
+
    lcd.centre("Timer0",1);
    setupTimer0();
-   // Summarize the running conditions of the robot
+
    lcd.centre("Summary",1);
    showCfgDetails();
-   lcd.centre("IP:" + myIPAddress,0);
-   lcd.centre("MAC:" + myMACaddress,1);
+
+   lcd.centre("IP:" + format.ipToString(network.getIpAddress()), 0);
+   lcd.centre("MAC:" + format.noColonMAC(network.getMacAddress()),1);
+
    Serial.println("<setup> End of setup");
 } //setup()
 
@@ -259,5 +218,5 @@ void loop()
 //  motorTest();
    limitSwitchMonitoring(); // Check for limit switch activation 
    cycleLed(); // Update LED as needed
-   webota.handle(); // Check for OTA messages
+   webota.handle(); // Check for OTA messages. Can also use child network.handle();
 } //loop()

@@ -16,6 +16,7 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- -------------------------------------------------------------------------------------------------------------
+ * 2021-02-27 Old Squire Added cfgToConsole()
  * 2021-02-24 Old Squire Program created
  *************************************************************************************************************************************/
 #ifndef amResetButton_h
@@ -29,6 +30,9 @@
 #define CYANNE 4 // Reset button LED cyanne
 #define AQUA 5 // Reset button LED aqua 
 #define WHITE 6 // Reset button LED white 
+#define ledTimer 0 // Timer that will be used to control LED on reset button
+#define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
+#define ledAutoReload true // Set to automatically restart the timer when it expires 
 
 // Define structure reset buttons three built-in LEDs. 
 // https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
@@ -54,11 +58,15 @@ class amResetButton
 {
    public:
       amResetButton(); // Constructor
-//      void init(); //  Initialize LEDs
+      void cfgToConsole();
       void cycleColour(); // Advance to the next colour in the cycle
       void setColour(int8_t ledColour); // Set the colour of the LED on the reset button
       int8_t getCurClrNum(); // Return the current colour setting counter as an 8 bit integer 
       String getCurClrStr(); // Return the current colour setting counter as a String
+      uint8_t getTmrClockNum();
+      uint32_t getTmrClockSpeed();
+      uint32_t getTmrFreq();
+      bool getTmrAutoReload();
    private:
       void _resetColourCount(); // Reset the colour counter to 0
       int8_t _cycleCount; // Current count through colour cycle

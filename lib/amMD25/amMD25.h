@@ -53,6 +53,7 @@ class amMD25
 {
   public:
     amMD25(); // Constructor
+    void cfgToConsole();
     byte getFirmwareVersion();
     void encoderReset();
     long getEncoder1();

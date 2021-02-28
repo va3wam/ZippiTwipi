@@ -47,10 +47,20 @@ byte amMD25::getFirmwareVersion()
   Wire.requestFrom(MD25ADDRESS, 1); // Request 1 byte from MD25 address register
   while(Wire.available() < 1); // Wait for reply to request for address to arrive
   byte software = Wire.read(); // Read it in
-//  Serial.print("<amMD25::getMD25FirmwareVersion> Response to request for software version is ");
-//  Serial.println(software, HEX);
   return(software); // Return address to 
 } //getMD25FirmwareVersion()
+
+/**
+ * @brief Send detailed timer configuration information to the console.
+ * @details The Adafruit Rugged Metal Pushbutton - 16mm 6V RGB Momentary is used for this robots 
+ * reset button. This button has an integrated RGB LED. A timer ISR is used to control the various
+ * behaviors of the LED. This function sends the details of the timer to the console.     
+===================================================================================================*/
+void amMD25::cfgToConsole()
+{
+   Serial.println("<amResetButton::cfgToConsole> MD25 motor controller settings:");  
+   Serial.print("<amResetButton::cfgToConsole> ... Motor controller firmware version  = "); Serial.println(getFirmwareVersion());
+} //amMD25::cfgToConsole()
 
 /** 
  * @brief This function resets the encoder values to 0

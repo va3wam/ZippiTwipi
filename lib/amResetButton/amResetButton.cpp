@@ -21,6 +21,7 @@
  * 2021-02-24 Old Squire Program created
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
+#include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
 #include <amResetButton.h> // Header file for linking.
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
 
@@ -81,8 +82,58 @@ amResetButton::amResetButton()
    ledcAttachPin(_greenLED.gpioPin, _greenLED.channel); // Attach PWM channel to pin connected to green LED on reset button
    ledcSetup(_blueLED.channel, _blueLED.frequency, _blueLED.resolution); // Configure blue LED PWM properties
    ledcAttachPin(_blueLED.gpioPin, _blueLED.channel); // Attach PWM channel to pin connected to blue LED on reset button
-
 } //amResetButton::amResetButton()
+
+/**
+ * @brief Returns the number of the clock used to control the LED. 
+ * @return uint8_t ledTimer  
+===================================================================================================*/
+uint8_t amResetButton::getTmrClockNum()
+{
+   return (uint32_t)ledTimer;
+} //amResetButton::getTmrClockNum()
+
+/**
+ * @brief Returns the clock speed of the application core in Mhz.
+ * @return uint32_t rtc_clk_apb_freq_get() / 1000000   
+===================================================================================================*/
+uint32_t amResetButton::getTmrClockSpeed()
+{
+   return rtc_clk_apb_freq_get() / 1000000; // Convert timer clock speed(Hz) to MHz by dividing by 1 million
+} //amResetButton::getTmr0Clock()
+
+/**
+ * @brief Returns the LED interrupt frequency in Hz.
+ * @return uint32_t ledFreq   
+===================================================================================================*/
+uint32_t amResetButton::getTmrFreq()
+{
+   return (uint32_t)ledFreq; 
+} //amResetButton::getTmrFreq()
+
+/**
+ * @brief Returns the LED interrupt frequency in Hz.
+ * @return uint32_t ledFreq   
+===================================================================================================*/
+bool amResetButton::getTmrAutoReload()
+{
+   return (bool) ledAutoReload; 
+} //amResetButton::getTmrAutoReload()
+
+/**
+ * @brief Send detailed timer configuration information to the console.
+ * @details The Adafruit Rugged Metal Pushbutton - 16mm 6V RGB Momentary is used for this robots 
+ * reset button. This button has an integrated RGB LED. A timer ISR is used to control the various
+ * behaviors of the LED. This function sends the details of the timer to the console.     
+===================================================================================================*/
+void amResetButton::cfgToConsole()
+{
+   Serial.println("<amResetButton::cfgToConsole> Reset button LED timer settings:");  
+   Serial.print("<amResetButton::cfgToConsole> ... LED timer number (0-3) = "); Serial.println(getTmrClockNum());
+   Serial.print("<amResetButton::cfgToConsole> ... LED timer clock frequency = "); Serial.print(getTmrClockSpeed()); Serial.println("MHz");
+   Serial.print("<amResetButton::cfgToConsole> ... LED interrupt frequency = "); Serial.print(getTmrFreq()); Serial.println("MHz");
+   Serial.print("<amResetButton::cfgToConsole> ... LED timer auto-reload (True/False) = "); Serial.println(getTmrAutoReload());
+} //amResetButton::cfgToConsole()
 
 /**
  * @brief Initialize the LEDs integrated into the rest button.
@@ -102,8 +153,8 @@ void amResetButton::init()
 void amResetButton::cycleColour()
 {
    setColour(_cycleCount);
-   Serial.print("<amResetButton::cycleColour> Colour name = ");
-   Serial.println(_colour[_cycleCount].name);
+//   Serial.print("<amResetButton::cycleColour> Colour name = ");
+//   Serial.println(_colour[_cycleCount].name);
    _cycleCount ++; // Increment colour counter 
    if(_cycleCount >= _numColoursSupported) // Do not exceed maximum known colours
    {
@@ -123,49 +174,49 @@ void amResetButton::setColour(int8_t clr)
    {
       _cycleCount = 0; // Start back at the first colour
    } //if
-   Serial.print("<amResetButton::cycleColour> Set colour to = ");
-   Serial.println(_colour[_cycleCount].name);
+//   Serial.print("<amResetButton::cycleColour> Set colour to = ");
+//   Serial.println(_colour[_cycleCount].name);
 
    switch(_cycleCount)
    {
       case RED: // If the LED is to be coloured red
-         Serial.println("<amResetButton::setColour> Set dutycycles for RED");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for RED");
          ledcWrite(_redLED.channel, _colour[RED].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[RED].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[RED].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       case GREEN: // If the LED is to be coloured green
-         Serial.println("<amResetButton::setColour> Set dutycycles for GREEN");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for GREEN");
          ledcWrite(_redLED.channel, _colour[GREEN].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[GREEN].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[GREEN].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       case BLUE: // If the LED is to be coloured blue
-         Serial.println("<amResetButton::setColour> Set dutycycles for BLUE");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for BLUE");
          ledcWrite(_redLED.channel, _colour[BLUE].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[BLUE].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[BLUE].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       case PINK: // If the LED is to be coloured pink
-         Serial.println("<amResetButton::setColour> Set dutycycles for PINK");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for PINK");
          ledcWrite(_redLED.channel, _colour[PINK].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[PINK].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[PINK].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       case CYANNE: // If the LED is to be coloured cyanne
-         Serial.println("<amResetButton::setColour> Set dutycycles for CYANNE");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for CYANNE");
          ledcWrite(_redLED.channel, _colour[CYANNE].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[CYANNE].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[CYANNE].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       case AQUA: // If the LED is to be coloured aqua
-         Serial.println("<amResetButton::setColour> Set dutycycles for AQUA");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for AQUA");
          ledcWrite(_redLED.channel, _colour[AQUA].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[AQUA].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[AQUA].blueDutyCycle); // Set the PWM duty cycle of the blue LED
          break;
       default: // If no other colour matches then default to white
-         Serial.println("<amResetButton::setColour> Set dutycycles for WHITE");
+//         Serial.println("<amResetButton::setColour> Set dutycycles for WHITE");
          ledcWrite(_redLED.channel, _colour[WHITE].redDutyCycle); // Set the PWM duty cycle of the red LED
          ledcWrite(_greenLED.channel, _colour[WHITE].greenDutyCycle); // Set the PWM duty cycle of the green LED
          ledcWrite(_blueLED.channel, _colour[WHITE].blueDutyCycle); // Set the PWM duty cycle of the blue LED

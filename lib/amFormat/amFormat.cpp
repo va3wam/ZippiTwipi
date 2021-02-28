@@ -36,14 +36,14 @@ amFormat::amFormat()
  * =============================================================================== */
 String amFormat::noColonMAC(String macAddress)
 {
-   Serial.println("<amFormat::noColonMAC> Removing colons from MAC address");
+//   Serial.println("<amFormat::noColonMAC> Removing colons from MAC address");
    macAddress.remove(2, 1);        // Remove first colon from MAC address
    macAddress.remove(4, 1);        // Remove second colon from MAC address
    macAddress.remove(6, 1);        // Remove third colon from MAC address
    macAddress.remove(8, 1);        // Remove forth colon from MAC address
    macAddress.remove(10, 1);       // Remove fifth colon from MAC address
-   Serial.print("<amFormat::noColonMAC> Formatted MAC address without colons = ");
-   Serial.println(macAddress);
+//   Serial.print("<amFormat::noColonMAC> Formatted MAC address without colons = ");
+//   Serial.println(macAddress);
    return macAddress;
 }  //amFormat::noColonMAC()
 
@@ -71,7 +71,7 @@ String amFormat::ipToString(IPAddress ip)
    {
       s += i ? "." + String(ip[i]) : String(ip[i]);
    } //for
-   Serial.print("<ipToString> IP Address = ");
-   Serial.println(s);
+//   Serial.print("<ipToString> IP Address = ");
+//   Serial.println(s);
    return s;
 }  //amFormat::ipToString()
