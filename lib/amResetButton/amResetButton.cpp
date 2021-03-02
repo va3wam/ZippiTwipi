@@ -20,8 +20,10 @@
  * ---------- ---------- ---------------------------------------------------------------------------
  * 2021-02-24 Old Squire Program created
  ***************************************************************************************************/
+
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
+#include "ESP32TimerInterrupt.h" //https://github.com/khoih-prog/ESP32TimerInterrupt/tree/master/examples.
 #include <amResetButton.h> // Header file for linking.
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
 

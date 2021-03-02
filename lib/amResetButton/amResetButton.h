@@ -30,9 +30,11 @@
 #define CYANNE 4 // Reset button LED cyanne
 #define AQUA 5 // Reset button LED aqua 
 #define WHITE 6 // Reset button LED white 
+
 #define ledTimer 0 // Timer that will be used to control LED on reset button
 #define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 #define ledAutoReload true // Set to automatically restart the timer when it expires 
+//#define TIMER0_INTERVAL_MS 1000
 
 // Define structure reset buttons three built-in LEDs. 
 // https://microcontrollerslab.com/esp32-pwm-arduino-ide-led-fading-example/ 
@@ -69,11 +71,12 @@ class amResetButton
       bool getTmrAutoReload();
    private:
       void _resetColourCount(); // Reset the colour counter to 0
+      void IRAM_ATTR TimerHandler0();
       int8_t _cycleCount; // Current count through colour cycle
       struct_led _redLED;
       struct_led _greenLED;
       struct_led _blueLED;
-      struct_Colour _colour[_numColoursSupported]; // Array of colours structure indexed by _cycleCount 
+      struct_Colour _colour[_numColoursSupported]; // Array of colours structure indexed by _cycleCount
 };
 
 #endif

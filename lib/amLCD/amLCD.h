@@ -16,6 +16,7 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- -------------------------------------------------------------------------------------------------------------
+ * 2021-02-28 Old Squire Added defines for row 1 and row 2
  * 2021-02-25 Old Squire Program created
  *************************************************************************************************************************************/
 #ifndef amLCD_h
@@ -25,7 +26,17 @@
 
 #define lcdNumCols 16 // Number of columns in model of LCD being used
 #define lcdNumRows 2 // Number of rows in model of LCD being used
-#define lcdI2cAddress 0x3F; // I2C address of the LCD
+#define lcdI2cAddress 0x3F // I2C address of the LCD
+#define lcdRow1 0 // Specify first row of LCD during cursor position setting
+#define lcdRow2 1 // Specify second row of LCD during cursor position setting
+
+// Define structure and variables for the LCD 
+typedef struct
+{
+   int numCols = lcdNumCols;
+   int numRows = lcdNumRows;
+   int i2cAdd = lcdI2cAddress;
+}lcdStruct; 
 
 // Define amLCD class
 class amLCD : public LiquidCrystal_I2C // Indicate that we are extending LiquidCrystal_I2C class with our class 

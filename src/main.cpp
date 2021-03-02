@@ -53,9 +53,6 @@ amFormat format; // Accept various variable type/formats and return a different 
 amChip appCpu; // Access information about the ESP32 application microprocessor
 amWiFi network; // WiFi and OTA control
 
-// Define variables to store environment information 
-uint32_t arduinoCore; // The ESP32 comes with 2 Xtensa 32-bit LX6 microprocessors: core 0 and core 1. Arduino IDE runs on core 1.
-uint32_t cpuClockSpeed; // Clock speed of the core that Arduino is running on (MHz)
 uint32_t timerClockSpeed; // Clock speed of the hardware timers (MHz)
 
 // Define structure and variables for hardware interrupt timer 
@@ -64,17 +61,6 @@ int totalInterrupt0Counter; // Track how many times the interrupt has fired in t
 int currColourCnt; // Track what colour is currently active for the reset button LED
 hw_timer_t * timer0 = NULL; // Pointer to hardware timer0
 portMUX_TYPE timer0Mux = portMUX_INITIALIZER_UNLOCKED; // Used to prevent race conditins updating counters
-
-// Define structure and variables for the MD25 motor controller 
-byte md25FirmwareVersion; // Firmware version of MD25 motor controller
-
-// Define structure and variables for the LCD 
-typedef struct
-{
-   int numCols = lcdNumCols;
-   int numRows = lcdNumRows;
-   int i2cAdd = lcdI2cAddress;
-}lcdStruct; 
 lcdStruct lcdProperty; // Declare structure that holds relevant variables for the LCD
 amLCD lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows); // Create LCD object
 
@@ -187,25 +173,25 @@ void setup()
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
 
-   lcd.centre("Boot Process",0);
-   lcd.centre("Motors",1);
+   lcd.centre("Boot Process",lcdRow1);
+   lcd.centre("Motors",lcdRow2);
    motorControl.encoderReset();
 
-   lcd.centre("Limit Switches",1);
+   lcd.centre("Limit Switches",lcdRow2);
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
 
-   lcd.centre("Network",1);
+   lcd.centre("Network",lcdRow2);
    network.connect();
 
-   lcd.centre("Timer0",1);
+   lcd.centre("Timer0",lcdRow2);
    setupTimer0();
 
-   lcd.centre("Summary",1);
+   lcd.centre("Summary",lcdRow2);
    showCfgDetails();
 
-   lcd.centre("IP:" + format.ipToString(network.getIpAddress()), 0);
-   lcd.centre("MAC:" + format.noColonMAC(network.getMacAddress()),1);
+   lcd.centre("IP:" + format.ipToString(network.getIpAddress()), lcdRow1);
+   lcd.centre("MAC:" + format.noColonMAC(network.getMacAddress()),lcdRow2);
 
    Serial.println("<setup> End of setup");
 } //setup()
