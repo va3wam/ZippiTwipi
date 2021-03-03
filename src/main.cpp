@@ -18,6 +18,7 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- ---------------------------------------------------------------------------
+ * 2021-03-03 Old Squire Moved all timer logic to amReset().
  * 2021-02-28 Old Squire Moved all networking logic to amWiFi().
  * 2021-02-27 Old Squire Moved timer information to amResetButton().
  * 2021-02-26 Old Squire Moved formatting, LCD and chip functions out into their own class libraries. 
@@ -36,12 +37,10 @@
 #include <amI2C.h> // Required for serial I2C communication 
 #include <amMD25.h> // Required for motor control
 #include <amLCD.h> // Required for LCD control
-#include <amResetButton.h> // Required for controlling reset button LED
+#include <amResetButton.h> // Required for controlling reset button LED. Includes use of one of the timers
 #include <amFormat.h> // Library of handy variable format conversion functions
 #include <amChip.h> // Used to access details about the core (CPU) that the Arduino framework runs on
 #include <amWiFi.h> // Required for all networking including the webota functions. 
-#define ledTimer 0 // Timer 0 will be used to control LED on reset button
-#define ledFreq 1000 // Micro seconds per timer0 (led timer) interrupt occurence (1 per second)
 
 String firmwareVersion = "0.0.1"; // Semver formatted version number for this firmware code
 
@@ -65,17 +64,6 @@ lcdStruct lcdProperty; // Declare structure that holds relevant variables for th
 amLCD lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows); // Create LCD object
 
 /**
- * @brief Hardware timer 0 interrupt handler function
- * @details Used to control flashing of LEDs on reset button
-=================================================================================================== */
-void IRAM_ATTR onTimer0() 
-{
-  portENTER_CRITICAL_ISR(&timer0Mux); // Use mux variable to prevent race condiiton with loop()
-  interrupt0Counter++; 
-  portEXIT_CRITICAL_ISR(&timer0Mux);
-} //onTimer0()
-
-/**
  * @brief Check the limit switches moounted at the front and back of the robot to see if it has
  * lost its balance
 =================================================================================================== */
@@ -91,7 +79,7 @@ void limitSwitchMonitoring()
       Serial.println(motorControl.getEncoder1());
       Serial.print("<setup> Encode 2 = ");
       Serial.println(motorControl.getEncoder2());
-   }
+   } //if
    else
    {
       if(frontSwitch == 0 && backSwitch == 1)
@@ -104,7 +92,7 @@ void limitSwitchMonitoring()
          Serial.println("<limitSwitchMonitoring> Robot is resting on back limit switch");
          motorControl.spinMotor(2,0); // motor (0=left, 1=right, 2=both), speed 
       } //if
-   } //if
+   } //else
   delay(100);
 } //limitSwitchMonitoring()
 
@@ -116,23 +104,6 @@ void setupSerial(unsigned long baudRate)
    Serial.begin(115200); // Open a serial connection at specified baud rate 
    while (!Serial); // Wait for Serial port to be ready
 } //setupSerial()
-
-/**
- * @brief Cycle through LED colours 
- * @details Each call causes the colour to switch to the next colour in the cycle
-=================================================================================================== */
-void cycleLed()
-{
-   if(interrupt0Counter > 0) 
-   {
-      portENTER_CRITICAL(&timer0Mux);
-      interrupt0Counter--;
-      portEXIT_CRITICAL(&timer0Mux);
-      totalInterrupt0Counter++;
-      myResetButton.cycleColour();
-//      myResetButton.setColour(AQUA);
-   } //if   
-} //cycleLed()
 
 /** 
  * @brief Capture and show the environment details of the robot
@@ -148,20 +119,6 @@ void showCfgDetails()
    motorControl.cfgToConsole(); // Display motor controller information on the console
    network.cfgToConsole(); // Display network information on the console
 } //showCfgDetails()
-
-/** 
- * @brief Configure and activate Timer0 used to control the RGB LED on the reset button
-=================================================================================================== */
-void setupTimer0()
-{
-   // Setup timer0
-   Serial.print("<setupTimer0> Configure timer");
-   Serial.println(ledTimer); 
-   timer0 = timerBegin(ledTimer, timerClockSpeed, true); // Set timer 0 to a 1 MHz frequency 
-   timerAttachInterrupt(timer0, &onTimer0, true); // Call onTimer0() each time ths interrupt fires
-   timerAlarmWrite(timer0, ledFreq, true); // Set frequency interrupt fires and reset counter to repeat
-   timerAlarmEnable(timer0); // Enable interrupt   
-} //setupTimer0()
 
 /** 
  * @brief Standard set up routine for Arduino programs 
@@ -181,11 +138,12 @@ void setup()
    pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
    pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
 
+   lcd.centre("LED",lcdRow2);
+//   myResetButton.setColour(PINK); // What colour to use for blinking the reset button LED or setting it to a solid colour
+   myResetButton.setLedMode(ledModeCycle); // What behaviour you want for the LED (on, off, bink, cycle)
+
    lcd.centre("Network",lcdRow2);
    network.connect();
-
-   lcd.centre("Timer0",lcdRow2);
-   setupTimer0();
 
    lcd.centre("Summary",lcdRow2);
    showCfgDetails();
@@ -201,8 +159,7 @@ void setup()
 =================================================================================================== */
 void loop()
 {
-//  motorTest();
    limitSwitchMonitoring(); // Check for limit switch activation 
-   cycleLed(); // Update LED as needed
+   myResetButton.updateLed(); // Handle the behaviour of the reset button LED
    webota.handle(); // Check for OTA messages. Can also use child network.handle();
 } //loop()
