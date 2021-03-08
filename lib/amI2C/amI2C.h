@@ -21,6 +21,9 @@
 #ifndef amI2C_h
 #define amI2C_h
 
+#include <huzzah32_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
+#include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
+
 // Define I2C bus constants, classes and global variables 
 #define i2cBusName0 Wire // Map friendly name to bus0 name
 #define i2cBusName1 Wire1 // Map friendly name to bus1 name
@@ -50,6 +53,7 @@ class amI2C
   public:
     amI2C();
     void configure(int bus, int sdaPin, int sclPin, uint32_t speed);
+    void cfgToConsole();
   private:
     String _identifyDevice(int deviceAddress);
     void _scanI2Cbus(int busNum);

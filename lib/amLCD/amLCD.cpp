@@ -33,6 +33,7 @@ amLCD::amLCD(uint8_t lcd_Addr,uint8_t lcd_cols,uint8_t lcd_rows) // Constructor 
 {
    this->init(); // Call function defined in parent class LiquidCrystal_I2C. Initialize LCD. 
    this->clear(); // Call function defined in parent class LiquidCrystal_I2C. Clear LCD.
+   this->noCursor(); // Call function defined in parent class LiquidCrystal_I2C. Turn off the cursor
    this->backlight(); // Call function defined in parent class LiquidCrystal_I2C. Turn on backlight.
 } //amLCD::amLCD()
 
@@ -61,4 +62,5 @@ void amLCD::centre(String msg, int row)
    this->print("                "); // Call function defined in parent class LiquidCrystal_I2C. Print spaces to clear current row.
    this->setCursor(startCol,row); // Call function defined in parent class LiquidCrystal_I2C. Go to column that will cause the message to be centred.
    this->print(message); // Call function defined in parent class LiquidCrystal_I2C. Print the message.
+   this->noCursor(); // Call function defined in parent class LiquidCrystal_I2C. Turn off the cursor
 } //amLCD::centre()

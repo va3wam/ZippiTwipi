@@ -16,8 +16,8 @@
 #include <huzzah32_gpio_pins.h> // Mapping of ESP32 pins to Huzzah32 development board pins
 #ifndef _ZIPPITWIPI_GPIO_PINS_H // Start of conditional preprocessor code that only allows this library to be included once
 #define _ZIPPITWIPI_GPIO_PINS_H // Preprocessor variable used by above check
-#define frontLimitSwitch pinLbl14 // Front limit switch, physical pin 19 
-#define backLimitSwitch pinLbl32 // Back limit switch, physical pin 2066666 
+#define frontLimitSwitch pinLbl32 // Front limit switch, physical pin 32 
+#define backLimitSwitch pinLbl14 // Back limit switch, physical pin 14 
 #define I2C_bus0_SDA pinLblSDA // Serial Data Line (SDA) for I2C bus 0, physical pin 17
 #define I2C_bus0_SCL pinLblSCL // Serial Clock Line (SCL) for I2C bus 0, physical pin 18
 #define I2C_bus1_SDA pinLblTX // Serial Data Line (SDA) for I2C bus 1, physical pin 15

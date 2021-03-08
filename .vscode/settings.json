@@ -1,0 +1,7 @@
+{
+   "files.associations": {
+      "random": "cpp",
+      "*.cps": "javascript",
+      "functional": "cpp"
+   }
+}

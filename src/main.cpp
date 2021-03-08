@@ -18,6 +18,8 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- ---------------------------------------------------------------------------
+ * 2021-03-08 Old Squire Dropped use am amWifi() and replaced with amNetwork().
+ * 2021-03-04 Old Squire Moved limit switch logic to amLimitSwitch().
  * 2021-03-03 Old Squire Moved all timer logic to amReset().
  * 2021-02-28 Old Squire Moved all networking logic to amWiFi().
  * 2021-02-27 Old Squire Moved timer information to amResetButton().
@@ -30,8 +32,6 @@
  * 2020-10-22 Old Squire Program created
  ***************************************************************************************************/
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
-#include <Wire.h> // Required for serial I2C communication. Comes with Platform.io 
-#include <WiFi.h> // Required to connect to WiFi network. Comes with Platform.io
 #include <huzzah32_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
 #include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
 #include <amI2C.h> // Required for serial I2C communication 
@@ -40,26 +40,19 @@
 #include <amResetButton.h> // Required for controlling reset button LED. Includes use of one of the timers
 #include <amFormat.h> // Library of handy variable format conversion functions
 #include <amChip.h> // Used to access details about the core (CPU) that the Arduino framework runs on
-#include <amWiFi.h> // Required for all networking including the webota functions. 
+#include <amNetwork.h> // Required for all networking including the webota functions. 
+#include <amLimitSwitch.h> // Required for balance limit switches
 
 String firmwareVersion = "0.0.1"; // Semver formatted version number for this firmware code
 
 // Instantiate library objects
 amI2C i2cBus; // Object to manage I2C buses
 amMD25 motorControl; // Object to manage motors via h-bridge controller
-amResetButton myResetButton; // Control the reset button's integrated RGB LED
+amResetButton resetButton; // Control the reset button's integrated RGB LED
 amFormat format; // Accept various variable type/formats and return a different variable type/format
 amChip appCpu; // Access information about the ESP32 application microprocessor
-amWiFi network; // WiFi and OTA control
-
-uint32_t timerClockSpeed; // Clock speed of the hardware timers (MHz)
-
-// Define structure and variables for hardware interrupt timer 
-volatile int interrupt0Counter; // Track how many times the interrupt has fired and not been processed
-int totalInterrupt0Counter; // Track how many times the interrupt has fired in total
-int currColourCnt; // Track what colour is currently active for the reset button LED
-hw_timer_t * timer0 = NULL; // Pointer to hardware timer0
-portMUX_TYPE timer0Mux = portMUX_INITIALIZER_UNLOCKED; // Used to prevent race conditins updating counters
+amNetwork network; // All network related things (OTA, HTTP server, MQTT, WiFi)
+amLimitSwitch balanceSwitch; // Limit switches used to detect when the robot is leaning one way or the other 
 lcdStruct lcdProperty; // Declare structure that holds relevant variables for the LCD
 amLCD lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows); // Create LCD object
 
@@ -69,31 +62,18 @@ amLCD lcd(lcdProperty.i2cAdd, lcdProperty.numCols, lcdProperty.numRows); // Crea
 =================================================================================================== */
 void limitSwitchMonitoring()
 {
-   int frontSwitch = digitalRead(frontLimitSwitch);
-   int backSwitch = digitalRead(backLimitSwitch);
-   if(frontSwitch == 0 && backSwitch == 0)
+   if(balanceSwitch.check(frontSwitch) == false && balanceSwitch.check(backSwitch) == false)
    {
-      Serial.println("<limitSwitchMonitoring> Robot is resting on both front and back limit switches");
-      motorControl.stopMotor(2); // motor (0=left, 1=right, 2=both) 
-      Serial.print("<setup> Encode 1 = ");
-      Serial.println(motorControl.getEncoder1());
-      Serial.print("<setup> Encode 2 = ");
-      Serial.println(motorControl.getEncoder2());
+      Serial.println("<limitSwitchMonitoring> Both switches are pressed");
    } //if
-   else
+   else if(balanceSwitch.check(frontSwitch) == false)
    {
-      if(frontSwitch == 0 && backSwitch == 1)
-      {
-         Serial.println("<limitSwitchMonitoring> Robot is resting on front limit switch");
-         motorControl.spinMotor(2,255); // motor (0=left, 1=right, 2=both), speed 
-      } //if
-      if(frontSwitch == 1 && backSwitch == 0)
-      {
-         Serial.println("<limitSwitchMonitoring> Robot is resting on back limit switch");
-         motorControl.spinMotor(2,0); // motor (0=left, 1=right, 2=both), speed 
-      } //if
-   } //else
-  delay(100);
+      Serial.println("<limitSwitchMonitoring> Front switch is pressed");
+   } //else if
+   else if(balanceSwitch.check(backSwitch) == false)
+   {
+      Serial.println("<limitSwitchMonitoring> Back switch is pressed");
+   } //else if
 } //limitSwitchMonitoring()
 
 /**
@@ -115,7 +95,8 @@ void showCfgDetails()
    Serial.print("<showCfgDetails> ... Robot firmware version = "); 
    Serial.println(firmwareVersion);
    appCpu.cfgToConsole(); // Display core0 information on the console
-   myResetButton.cfgToConsole(); // Display timer0 information on the console
+   i2cBus.cfgToConsole(); // Display I2C information on the console
+   resetButton.cfgToConsole(); // Display timer0 information on the console
    motorControl.cfgToConsole(); // Display motor controller information on the console
    network.cfgToConsole(); // Display network information on the console
 } //showCfgDetails()
@@ -129,28 +110,23 @@ void setup()
    Serial.println("<setup> Start of setup");
    i2cBus.configure(i2cBusNumber0, I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Set up I2C bus 0 
    i2cBus.configure(i2cBusNumber1, I2C_bus1_SDA, I2C_bus1_SCL, I2C_bus1_speed); // Set up I2C bus 1
-
+   // Motor setup
    lcd.centre("Boot Process",lcdRow1);
    lcd.centre("Motors",lcdRow2);
    motorControl.encoderReset();
-
-   lcd.centre("Limit Switches",lcdRow2);
-   pinMode(frontLimitSwitch,INPUT_PULLUP); // Set pin with front limit switch connected to it as input with an internal pullup resistor
-   pinMode(backLimitSwitch,INPUT_PULLUP); // Set pin with back limit switch connected to it as input with an internal pullup resistor        
-
+   // Reset button setup  
    lcd.centre("LED",lcdRow2);
-//   myResetButton.setColour(PINK); // What colour to use for blinking the reset button LED or setting it to a solid colour
-   myResetButton.setLedMode(ledModeCycle); // What behaviour you want for the LED (on, off, bink, cycle)
-
+   resetButton.setLedMode(ledModeCycle); // What behaviour you want for the LED (on, off, bink, cycle)
+   // Network setup
    lcd.centre("Network",lcdRow2);
-   network.connect();
-
+   bool isWiFi = network.connect();
+   Serial.print("<setup> isWiFi = "); Serial.println(isWiFi);
+   // Summarize configuration
    lcd.centre("Summary",lcdRow2);
    showCfgDetails();
-
+   // Display key info on LCD
    lcd.centre("IP:" + format.ipToString(network.getIpAddress()), lcdRow1);
    lcd.centre("MAC:" + format.noColonMAC(network.getMacAddress()),lcdRow2);
-
    Serial.println("<setup> End of setup");
 } //setup()
 
@@ -160,6 +136,6 @@ void setup()
 void loop()
 {
    limitSwitchMonitoring(); // Check for limit switch activation 
-   myResetButton.updateLed(); // Handle the behaviour of the reset button LED
-   webota.handle(); // Check for OTA messages. Can also use child network.handle();
+   resetButton.updateLed(); // Handle the behaviour of the reset button LED
+   network.checkForClientRequest(); // Look to see if there is an Over The Air firmware update incoming
 } //loop()

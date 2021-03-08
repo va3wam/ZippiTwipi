@@ -105,20 +105,20 @@ void amI2C::_scanI2Cbus(int busNum)
     } // end of good response
   } // end of for loop
   _i2cBusInfo[busNum].agentCnt = count; // Record the final device count for the bus
-  Serial.print("<amI2C::scanI2Cbus> Scanned i2c bus ");
-  Serial.print(busNum);
-  Serial.print (" and found ");
-  Serial.print (count, DEC);
-  Serial.println (" device(s)");
-  for(byte i = 0; i < count; i++) // Report on what devices were found
-  {
-    Serial.print("<amI2C::scanI2Cbus> ... ");
-    Serial.print(_i2cBusInfo[busNum].agentAddress[i], DEC);
-    Serial.print(" (0x");
-    Serial.print(_i2cBusInfo[busNum].agentAddress[i], HEX);
-    Serial.print(") - ");
-    Serial.println(_i2cBusInfo[busNum].agentDescription[i]);
-  } //for
+//  Serial.print("<amI2C::scanI2Cbus> Scanned i2c bus ");
+//  Serial.print(busNum);
+//  Serial.print (" and found ");
+//  Serial.print (count, DEC);
+//  Serial.println (" device(s)");
+//  for(byte i = 0; i < count; i++) // Report on what devices were found
+//  {
+//    Serial.print("<amI2C::scanI2Cbus> ... ");
+//    Serial.print(_i2cBusInfo[busNum].agentAddress[i], DEC);
+//    Serial.print(" (0x");
+//    Serial.print(_i2cBusInfo[busNum].agentAddress[i], HEX);
+//    Serial.print(") - ");
+//    Serial.println(_i2cBusInfo[busNum].agentDescription[i]);
+//  } //for
 } //scanI2Cbus()
 
 /**
@@ -128,20 +128,61 @@ void amI2C::configure(int bus, int sdaPin, int sclPin, uint32_t speed)
 {
    if(bus==0)
    {
-      Serial.print("<amI2C::configure> Configuring Wire I2C bus ");
+//      Serial.print("<amI2C::configure> Configuring Wire I2C bus ");
       Wire.begin(sdaPin, sclPin, speed);
    } //if
    else
    {
-      Serial.print("<amI2C::configure> Configuring Wire1 I2C bus ");
+//      Serial.print("<amI2C::configure> Configuring Wire1 I2C bus ");
       Wire1.begin(sdaPin, sclPin, speed);
    } //else
-   Serial.println(bus);
-   Serial.print("<amI2C::configure> ... Speed = ");
-   Serial.println(speed);
-   Serial.print("<amI2C::configure> ... SDA pin = ");
-   Serial.println(sdaPin);
-   Serial.print("<amI2C::configure> ... SCL pin = ");
-   Serial.println(sclPin);
+//   Serial.println(bus);
+//   Serial.print("<amI2C::configure> ... Speed = ");
+//   Serial.println(speed);
+//   Serial.print("<amI2C::configure> ... SDA pin = ");
+//   Serial.println(sdaPin);
+//   Serial.print("<amI2C::configure> ... SCL pin = ");
+//   Serial.println(sclPin);
   _scanI2Cbus(bus);
 } //configure()
+
+/**
+ * @brief Dump the I2C configuration information to the console
+=================================================================================================== */
+void amI2C::cfgToConsole()
+{
+   int count0 =  _i2cBusInfo[i2cBusNumber0].agentCnt; // Number of devices on bus0
+   int count1 =  _i2cBusInfo[i2cBusNumber1].agentCnt; // Number of devices on bus1
+   Serial.println("<amI2C::cfgToConsole> I2C Bus settings:");
+   // Dump bus 0 information
+   Serial.println("<amI2C::cfgToConsole> ... I2C bus number 0 (Wire)"); 
+   Serial.print("<amI2C::cfgToConsole> ...... SDA Pin: "); Serial.println(I2C_bus0_SDA);
+   Serial.print("<amI2C::cfgToConsole> ...... SCL Pin: "); Serial.println(I2C_bus0_SCL);
+   Serial.print("<amI2C::cfgToConsole> ...... Speed: "); Serial.println(I2C_bus0_speed);
+   Serial.print("<amI2C::cfgToConsole> ...... Number of agents: "); Serial.println(count0);
+   for(byte i = 0; i < count0; i++) // Report on what devices were found
+   {
+      Serial.print("<amI2C::cfgToConsole> ......... ");
+      Serial.print(_i2cBusInfo[i2cBusNumber0].agentAddress[i], DEC);
+      Serial.print(" (0x");
+      Serial.print(_i2cBusInfo[i2cBusNumber0].agentAddress[i], HEX);
+      Serial.print(") - ");
+      Serial.println(_i2cBusInfo[i2cBusNumber0].agentDescription[i]);
+   } //for
+
+   // Dump bus 1 information
+   Serial.println("<amI2C::cfgToConsole> ... I2C bus number 1 (Wire1)"); 
+   Serial.print("<amI2C::cfgToConsole> ...... SDA Pin: "); Serial.println(I2C_bus1_SDA);
+   Serial.print("<amI2C::cfgToConsole> ...... SCL Pin: "); Serial.println(I2C_bus1_SCL);
+   Serial.print("<amI2C::cfgToConsole> ...... Speed: "); Serial.println(I2C_bus1_speed);
+   Serial.print("<amI2C::cfgToConsole> ...... Number of agents: "); Serial.println(count1);
+   for(byte i = 0; i < count1; i++) // Report on what devices were found
+   {
+      Serial.print("<amI2C::cfgToConsole> ......... ");
+      Serial.print(_i2cBusInfo[i2cBusNumber1].agentAddress[i], DEC);
+      Serial.print(" (0x");
+      Serial.print(_i2cBusInfo[i2cBusNumber1].agentAddress[i], HEX);
+      Serial.print(") - ");
+      Serial.println(_i2cBusInfo[i2cBusNumber1].agentDescription[i]);
+   } //for
+} //amI2C::cfgToConsole()

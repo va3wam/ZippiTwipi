@@ -1,8 +1,8 @@
 /*************************************************************************************************************************************
- * @file amWiFi.h
+ * @file amLimitSwitch.h
  * @author theAgingApprentice
- * @brief Child class that extends the parent class ESP-WebOTA-master and adds some handy functions. 
- * @details Manages all network related commnication details.
+ * @brief Monitor limit switches. 
+ * @details Retrieve chip configuration details from both FreeRTOS and the ESP32 Arduino framework.
  * @copyright Copyright (c) 2021 the Aging Apprentice
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, 
@@ -16,36 +16,23 @@
  * 
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- -------------------------------------------------------------------------------------------------------------
- * 2021-02-27 Old Squire Program created
+ * 2021-03-04 Old Squire Program created
  *************************************************************************************************************************************/
-#ifndef amWiFi_h
-#define amWiFi_h
+#ifndef amLimitSwitch_h
+#define amLimitSwitch_h
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
-#include <amFormat.h> // Library of handy variable format conversion functions
-#include <WebOTA.h> // Parent class needed for Over-The-Air code loading
-#define HOST_NAME_PREFIX "Zippy" 
-#define OTA_LOCAL_PATH "/webota"
-#define OTA_LOCAL_PORT "8080"
+#include <huzzah32_gpio_pins.h> // Pin definitions for Adafruit Huzzah32 development board 
+#include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
+#define frontSwitch 0 // Indicates front limit switch
+#define backSwitch 1 // Indicates back limit switch
 
-// Define amWiFi class
-class amWiFi : public WebOTA // Indicate that we are extending WebOTA class with our class 
+// Define amLimitSwitch class
+class amLimitSwitch 
 {
    public:
-      amWiFi(); // Constructor
-      void connect(); 
-      void cfgToConsole();
-      String getAccessPointName(); // Retrieve the name of the Access Point the robot is using.
-      String getMacAddress(); // Retrieve the MAC of the Access Point of our WiFi radio transmitter. 
-      IPAddress getIpAddress(); // Retrieve the IP address assigned to the robot.
-      String getUniqueName(); // Retrieve the name that we will be known by on the AP and the MQTT broker.
-      String getOtaUrl(); // Retrieve the URL operators can use to access the OTA web page hosted by the robot.
+      amLimitSwitch(); // Constructor
+      bool check(int8_t switchName); // Check if the specified limit switch is contacting the ground or not
    private:
-      const char* _lookForAP(); // Scan the 2.4GHz WiFi radio band looking for known Access Points
-      String _translateEncryptionType(wifi_auth_mode_t encryptionType); // Converts AP ENUM encryption value to human readable format
-      const char *_mySSID;
-      const char *_myPassword;
-      String _hostName;
-      amFormat _format; // Accept various variable type/formats and return a different variable type/format
-}; //class amWiFi
+}; //class amLimitSwitch
 
 #endif
