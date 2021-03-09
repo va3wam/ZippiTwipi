@@ -137,5 +137,8 @@ void loop()
 {
    limitSwitchMonitoring(); // Check for limit switch activation 
    resetButton.updateLed(); // Handle the behaviour of the reset button LED
-   network.checkForClientRequest(); // Look to see if there is an Over The Air firmware update incoming
+   if(network.connectStatus()) // If there is a valid WiFi connection
+   {
+      network.checkForClientRequest(); // Look to see if there is an Over-The-Air firmware update incoming
+   } //if
 } //loop()

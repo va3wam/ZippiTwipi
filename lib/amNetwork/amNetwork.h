@@ -22,13 +22,14 @@
 #define amNetwork_h
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <WiFi.h> // Required to connect to WiFi network. Comes with Platform.io
-#include <WiFiClient.h> // 
-#include <WebServer.h>
-#include <ESPmDNS.h>
+#include <WiFiClient.h> // Required for communicating with web browser
+#include <WebServer.h> // Required for hosting an HTTP server on the ESP32
+#include <ESPmDNS.h> // Required for local name resolution and redirecting of incoming cient requests
 #include <Update.h> // Library used to update firmware
 #include <known_networks.h> // Defines Access points and passwords that the robot can scan for and connect to
 #include <amNetwork.h> // Library of handy variable format conversion functions
 #include <amFormat.h> // Library of handy variable format conversion functions
+#include <Preferences.h> // 
 
 #define HOST_NAME_PREFIX "Zippy" 
 #define httpPort 80
@@ -39,8 +40,9 @@ class amNetwork
    public:
       amNetwork(); // Constructor
       bool connect(); // Handle connecting to the WiFI network 
-      void cfgToConsole();
-      void checkForClientRequest();
+      bool connectStatus(); // Returns the status of the WiFi connection 
+      void cfgToConsole(); // Send client configuration information to the console
+      void checkForClientRequest(); // Check to see if there are any web client requests waiting to be serviced
       String getAccessPointName(); // Retrieve the name of the Access Point the robot is using.
       String getMacAddress(); // Retrieve the MAC of the Access Point of our WiFi radio transmitter. 
       IPAddress getIpAddress(); // Retrieve the IP address assigned to the robot.
@@ -52,7 +54,6 @@ class amNetwork
       const char* _apPassword; // Password of access point selected to cnnect to
       const char* _hostName; // Name the robot will be known by on the network
       amFormat _format; // Accept various variable type/formats and return a different variable type/format
-      const char* _mqttIp = "192.168.0.0";
 }; //class amNetwork
 
 #endif

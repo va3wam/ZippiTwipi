@@ -17,11 +17,16 @@
  * YYYY-MM-DD Dev        Description
  * ---------- ---------- -------------------------------------------------------------------------------------------------------------
  * 2021-03-08 Old Squire Added option page after login to select between MQTT broker IP configuraiton and OTA firmware updates.
+ *                       Also added setMqttBrokerIp() to handle web based configuration updates. Added preferences option to save
+ *                       MQTT broker IP to flsh memory.
  * 2021-03-07 Old Squire Program created
  *************************************************************************************************************************************/
  #include <amNetwork.h> // Required for Webserver data type
 
-WebServer server(httpPort);
+#define RW_MODE false
+WebServer server(httpPort); // The HTTP server 
+Preferences preferences; // Save to SPI NOR flash for variables to persist past reset
+String mqttIp; // IP address of MQTT broker
 String webPageStyle = "<style>#file-input,input{width:100%;height:44px;border-radius:4px;margin:10px auto;font-size:15px}"
                      "input{background:#f1f1f1;border:0;padding:0 15px}body{background:#3498db;font-family:sans-serif;font-size:14px;color:#777}"
                      "#file-input{padding:0;border:1px solid #ddd;line-height:44px;text-align:left;display:block;cursor:pointer}"
@@ -60,13 +65,7 @@ String cfgPage = "<head><meta charset='utf-8'/></head>"
                      "<form method='post' action='/setMqtt' name='configForm'>"
                      "<h2>Zippy Config Updater</h2>"
                      "<input name=mqttIp placeholder='MQTT Broker IP'> "
-//                     "<input type=submit onclick=sendMqttIp(this.form) class=btn value=Update></form>"
                      "<input type=submit class=btn value=Update></form>"
-//                     "<script>"
-//                     "function sendMqttIp(form) {"
-//                     "alert(form.mqttIp.value)"
-//                     "}"
-//                     "</script>" + webPageStyle;
                      + webPageStyle;
 String otaPage = "<head><meta charset='utf-8'/></head>"
                      "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
@@ -112,6 +111,22 @@ String otaPage = "<head><meta charset='utf-8'/></head>"
                      "});"
                      "});"
                      "</script>" + webPageStyle;
+
+/**
+ * @brief Update the MQTT broker IP address.
+ * @param String brokerIP
+===================================================================================================*/
+void setMqttBrokerIp(String brokerIP)
+{
+   mqttIp = brokerIP;
+   Serial.println("<setMqttBrokerIp> Stop MQTT service if it is running.");
+   Serial.print("<setMqttBrokerIp> Set MQTT broker IP to "); Serial.println(mqttIp);
+   Serial.println("<setMqttBrokerIp> Save MQTT broker IP to Prefernces.h.");
+   Serial.println("<setMqttBrokerIp> Start MQTT service.");
+   preferences.begin("my-app", RW_MODE); // Open access to flash memory
+   preferences.putString("mqttIp", mqttIp); // Write MQTT IP address to flash memory
+   preferences.end(); // Close access to flash memory
+} //setMqttBrokerIp()
 
 /**
  * @brief This is the constructor for this class.
@@ -236,6 +251,7 @@ String amNetwork::getUniqueName()
 ===================================================================================================*/
 bool amNetwork::connect()
 {
+   // Look for best Access Point to connect to
    _lookForAP(); // Scan the 2.4Ghz band for known Access Points and select the one with the strongest signal 
    if((String)_apSsid == "unknown") // If a suitable Access point is found 
    {
@@ -252,6 +268,12 @@ bool amNetwork::connect()
       Serial.println(_apSsid);
       return false; // No network
    } //if  
+   // Get MQTT broker IP from flash memory
+   preferences.begin("my-app", RW_MODE); // Open access to flash memory
+   mqttIp = preferences.getString("mqttIp", "192.168.2.21"); // Read MQTT IP address from flash memory
+   preferences.end(); // Close access to flash memory
+
+   // Set up web server
    /*use mdns for host name resolution*/
    if (!MDNS.begin(_hostName)) //http://esp32.local
    { 
@@ -280,9 +302,9 @@ bool amNetwork::connect()
    // Get MQTT value and send same config page back to browser
    server.on("/setMqtt", HTTP_POST, []() 
    {
-      Serial.println("<amNetwork::setMqtt> Broker IP address = ");
       server.sendHeader("Connection", "close");
       server.send(200, "text/html", optionPage);
+      setMqttBrokerIp(server.arg("mqttIp"));
    });   // Send CFG page to set new variiable's without needing to reboot
    server.on("/cfgWebUpdate", HTTP_GET, []() 
    {
@@ -327,9 +349,18 @@ bool amNetwork::connect()
          } //else
       } //else if
    });
-   server.begin();
+   server.begin(); // Start web server
    return true;
 } //amNetwork::connect()
+
+/**
+ * @brief Returns the status of the WiFi connection.
+ * @return bool WiFi.isCOnnected(), true if there is a connection and false if there is not.
+===================================================================================================*/
+bool amNetwork::connectStatus()
+{
+   return WiFi.isConnected();
+} // amNetwork::connectStatus()
 
 /**
  * @brief Check to see if there is a request coming in from a web browser. If there is, service it.
@@ -351,5 +382,6 @@ void amNetwork::cfgToConsole()
    Serial.print("<amNetwork::cfgToConsole> ... Access Point Name = "); Serial.println(getAccessPointName()); 
    Serial.print("<amNetwork::cfgToConsole> ... Robot MAC address: "); Serial.println(getMacAddress());
    Serial.print("<amNetwork::cfgToConsole> ... Robot IP address: "); Serial.println(getIpAddress());
-   Serial.print("<amNetwork::cfgToConsole> ... Robot Host Name: "); Serial.println(getUniqueName());   
+   Serial.print("<amNetwork::cfgToConsole> ... Robot Host Name: "); Serial.println(getUniqueName()); 
+   Serial.print("<amNetwork::cfgToConsole> ... MQTT broker IP = "); Serial.println(mqttIp);
 } //amNetwork::cfgToConsole()
