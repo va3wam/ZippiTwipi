@@ -29,7 +29,7 @@
 #include <known_networks.h> // Defines Access points and passwords that the robot can scan for and connect to
 #include <amNetwork.h> // Library of handy variable format conversion functions
 #include <amFormat.h> // Library of handy variable format conversion functions
-#include <Preferences.h> // 
+#include <Preferences.h> // Required for saving variables into Flash memory
 
 #define HOST_NAME_PREFIX "Zippy" 
 #define httpPort 80
@@ -47,7 +47,7 @@ class amNetwork
       String getMacAddress(); // Retrieve the MAC of the Access Point of our WiFi radio transmitter. 
       IPAddress getIpAddress(); // Retrieve the IP address assigned to the robot.
       String getUniqueName(); // Retrieve the name that we will be known by on the AP and the MQTT broker.
-   private:
+    private:
       const char* _lookForAP(); // Scan the 2.4GHz WiFi radio band looking for known Access Points
       String _translateEncryptionType(wifi_auth_mode_t encryptionType); // Converts AP ENUM encryption value to human readable format
       const char* _apSsid; // Access point SSID selected to coonnect to

@@ -22,6 +22,7 @@
  * 2021-03-07 Old Squire Program created
  *************************************************************************************************************************************/
  #include <amNetwork.h> // Required for Webserver data type
+ #include <amMqtt.h> // Required for MQTT pub/sub messaging 
 
 #define RW_MODE false
 WebServer server(httpPort); // The HTTP server 
@@ -126,6 +127,7 @@ void setMqttBrokerIp(String brokerIP)
    preferences.begin("my-app", RW_MODE); // Open access to flash memory
    preferences.putString("mqttIp", mqttIp); // Write MQTT IP address to flash memory
    preferences.end(); // Close access to flash memory
+   changeMqttIP(brokerIP); // Change the IP address of the MQTT broker
 } //setMqttBrokerIp()
 
 /**
@@ -350,6 +352,7 @@ bool amNetwork::connect()
       } //else if
    });
    server.begin(); // Start web server
+   initMqtt(mqttIp); // Set up Mqtt communications
    return true;
 } //amNetwork::connect()
 
