@@ -1,14 +1,5 @@
 /*************************************************************************************************************************************
- * @file huzzah32_gpio_pins.h
- * @author va3wam
- * @brief Map Espressif ESP32 GPIO pins to Adafruit Huzzah32 featherboard pins using the silkscreen labels on the development board 
- * @version 0.0.1
- * @copyright Copyright (c) 2020
- * Version YYYY-MM-DD Description
- * ------- ---------- ----------------------------------------------------------------------------------------------------------------
- * 0.0.1   2020-10-23 File created. 
- *************************************************************************************************************************************
- # Table of Adafruit Huzzah32 development board pin assignments
+ # Table of Adafruit Huzzah32 development board pin assignments.
  This table details the 21 pins on the ESP32-Wrover module that are accessible to us via the Adafrut Huzzah32 development board. The
  pins are mapped using the silkscreen label on the development board to show which GPIO pins on the Espressif ESP32 Wrover module
  can be used in an application. Brief notes on each pin are also shown. 
@@ -38,31 +29,35 @@
  |: 15  :|: 15  :|: I/O :|: Analog input A8 on ADC #2 and also GPIO #15. | 
  |: 32  :|: 32  :|: I/O :|: Analog input A7 on ADC #1 and also GPIO #32. It can also be used to connect a 32 KHz crystal | 
  |: 14  :|: 14  :|: I/O :|: Analog input A6 on ADC #2 and also GPIO #14. | 
-
  Note you can only read analog inputs on ADC #1 once WiFi has started
  Also that the physical pin count starts at the reset button on long pin side of the Huzzah32 development board
  *************************************************************************************************************************************/
 #ifndef _HUZZAH32_GPIO_PINS_H // Start of conditional preprocessor code that only allows this library to be included once
+
 #define _HUZZAH32_GPIO_PINS_H // Preprocessor variable used by above check
-#define pinLblTX 17 // Physical pin 15
-#define pinLblRX 16 // Physical pin 14
-#define pinLblSCL 22 // Physical pin 18
-#define pinLblSDA 23 // Physical pin 17 
-#define pinLblSCK 5 // Physical pin 11
-#define pinLblMO 18 // Physical pin 12
-#define pinLblMI 19 // Physical pin 13
-#define pinLblA0 26 // Physical pin 5
-#define pinLblA1 25 // Physical pin 6
-#define pinLblA2 34 // Physical pin 7
-#define pinLblA3 39 // Physical pin 8
-#define pinLblA4 36 // Physical pin 9
-#define pinLblA5 4 // Physical pin 10
-#define pinLbl21 21 // Physical pin 16
-#define pinLbl13 13 // Physical pin 25
-#define pinLbl12 12 // Physical pin 24
-#define pinLbl27 27 // Physical pin 23
-#define pinLbl33 33 // Physical pin 22
-#define pinLbl15 15 // Physical pin 21
-#define pinLbl32 32 // Physical pin 20
-#define pinLbl14 14 // Physical pin 19
+
+#include <Arduino.h> // Required for variable type declarations. Arduino Core for ESP32. Comes with Platform.io
+
+const int8_t PIN_LBL_TX = 17; // Physical pin 15
+const int8_t PIN_LBL_RX = 16; // Physical pin 14
+const int8_t PIN_LBL_SCL = 22; // Physical pin 18
+const int8_t PIN_LBL_SDA = 23; // Physical pin 17 
+const int8_t PIN_LBL_SCK = 5; // Physical pin 11
+const int8_t PIN_LBL_MO = 18; // Physical pin 12
+const int8_t PIN_LBL_MI = 19; // Physical pin 13
+const int8_t PIN_LBL_A0 = 26; // Physical pin 5
+const int8_t PIN_LBL_A1 = 25; // Physical pin 6
+const int8_t PIN_LBL_A2 = 34; // Physical pin 7
+const int8_t PIN_LBL_A3 = 39; // Physical pin 8
+const int8_t PIN_LBL_A4 = 36; // Physical pin 9
+const int8_t PIN_LBL_A5 = 4; // Physical pin 10
+const int8_t PIN_LBL_21 = 21; // Physical pin 16
+const int8_t PIN_LBL_13 = 13; // Physical pin 25
+const int8_t PIN_LBL_12 = 12; // Physical pin 24
+const int8_t PIN_LBL_27 = 27; // Physical pin 23
+const int8_t PIN_LBL_33 = 33; // Physical pin 22
+const int8_t PIN_LBL_15 = 15; // Physical pin 21
+const int8_t PIN_LBL_32 = 32; // Physical pin 20
+const int8_t PIN_LBL_14 = 14; // Physical pin 19
+
 #endif // End of conditional preprocessor code
