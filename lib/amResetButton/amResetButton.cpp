@@ -25,7 +25,7 @@
 #include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
 #include <soc/rtc.h> // Required for rtc_clk_apb_freq_get()
 #include <amResetButton.h> // Header file for linking.
-#include <zippiTwipi_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
+#include <zippy_gpio_pins.h> // Pin definitions for ZippiTiwppi robot
 
 // Define variables shared between parent and child classes here
 volatile uint32_t _interrupt0Counter;
