@@ -1,13 +1,13 @@
 /******************************************************************************
  * @file main.cpp
  *
- * @mainpage Hexbot firmware. 
+ * @mainpage Zippy Twippi firmware. 
  * 
  * @section intro_sec Introduction
  *
- * This code is the firmware for the six legged robot called Hexbot. Full
- * details on how to get the circuit and chassis for this robot are found
- * [here](https://github.com/va3wam/hexBot). 
+ * This code is the firmware for the two wheeled robot called Zippy Twippi. 
+ * Full details on how to get the circuit and chassis for this robot are found
+ * [here](https://github.com/va3wam/ZippiTwipi). 
  *
  * @section dependencies Dependencies
  * 
@@ -49,7 +49,8 @@ void setup()
    setupSerial(); // Set serial baud rate. 
    Log.begin(LOG_LEVEL_VERBOSE, &Serial, true);
    Log.traceln("<setup> Start of setup.");  
-   Wire.begin(I2C_bus0_SDA, I2C_bus0_SCL, I2C_bus0_speed); // Init I2C bus0.
+   Wire.begin(I2C_BUS0_SDA, I2C_BUS0_SCL, I2C_bus0_speed); // Init I2C bus0.
+   Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_bus1_speed); // Init I2C bus1.
    network.connect(); // Start WiFi connection.
    if(network.areWeConnected() == true) // If we are on the WiFi network.
    {
@@ -74,30 +75,28 @@ void setup()
       Log.errorln("<setup> Not connencted to the network. No MQTT or web interface.");
    } // else
    scanBus0(); // Scan bus0 and show connected devices.
-   if(oledConnected == true) // If an OLED was found on the I2C bus.
+   scanBus1(); // Scan bus1 and show connected devices.
+   if(ledConnected == true) // If an OLED was found on the I2C bus.
    {
-      Log.traceln("<setup> Initialize OLED.");
-      initOled();
+      Log.traceln("<setup> Initialize LED.");
+      initLed();
    } // if
    else // If an OLED was NOT found on the I2C bus.
    {
-      Log.warningln("<setup> OLED not connencted to I2C bus. No OLED messages to be issued.");
+      Log.warningln("<setup> LED not connencted to I2C bus. No LED messages to be issued.");
    } //else
-   if(motorController1Connected == true && motorController2Connected == true) // If servo drivers found on I2C bus.
+   if(motorControllerConnected == true) // If servo drivers found on I2C bus.
    {
-      Log.traceln("<setup> Initialize servo drivers.");
-      legStatus = true; 
-      initServos(); // Put servos into starting position. May replace with Doug's stuff. 
-      initLegs(); // Initilize inverse kinetic model of legs. May replace with Doug's stuff.
+      Log.traceln("<setup> Initialize DC motor driver.");
+      mobilityStatus = true; 
+      initMobility(); // Put servos into starting position. May replace with Doug's stuff. 
    } // if
    else // If servo drivers found on I2C bus.
    {
-      Log.errorln("<setup> One or more servo drivers not connencted to I2C bus. No motion is possible.");
-      legStatus = false;
+      Log.errorln("<setup> Motor driver not connencted to I2C bus. No motion is possible.");
+      mobilityStatus = false;
    } //else
    showCfgDetails(); // Show all configuration details in one summary.
-   testDaeIKFunctions(); // Doug's IK routines.
-//   moveLeg(0, 0, 120, 0, 70); // Routine that moves legs.   
    timer = millis(); // Timer for motor driver signalling.
    Log.traceln("<setup> End of setup."); 
 } // setup()
@@ -108,6 +107,5 @@ void setup()
 void loop() 
 {
    monitorWebServer(); // Handle any pending web client requests. 
-   checkOledButtons(); // Check if an OLED button has been pressed.
    checkMqtt(); // Check the MQTT message queue for incoming commands.
 } // loop()  
