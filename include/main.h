@@ -19,6 +19,7 @@
 #include <Adafruit_PWMServoDriver.h> // https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library.
 #include <ArduinoLog.h> // https://github.com/thijse/Arduino-Log.
 #include <LiquidCrystal_I2C.h> //https://github.com/tonykambo/LiquidCrystal_I2C
+//#include <amResetButton.h> // Required for controlling reset button LED. Includes use of one of the timers.
 /*******************************************************************************
  * @section codeModules Functions put into files according to function.
  * @details Order functions here in a way that ensures that variables get 
@@ -32,8 +33,9 @@
 #include <mqttBroker.h> // Establish connect to the the MQTT broker.
 #include <monitorWebServer.h> // Monitor the web server service.
 #include <i2c.h> // Scan I2C buses to see what devices are present.
-#include <led.h> // Control LED.
+#include <lcd.h> // Control LCD.
 #include <mobility.h> // Robot drive train. 
+//#include <statusLEDs.h> // Control status LEDs.
 /************************************************************************************
  * @section mainDeclare Declare functions.
  ************************************************************************************/
