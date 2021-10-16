@@ -51,7 +51,8 @@ void setup()
    Log.traceln("<setup> Start of setup.");  
    Wire.begin(I2C_BUS0_SDA, I2C_BUS0_SCL, I2C_bus0_speed); // Init I2C bus0.
    Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_bus1_speed); // Init I2C bus1.
-//   setupStatusLed(); // Configure the status LED on the reset button.
+   setupStatusLed(); // Configure the status LED on the reset button.
+   setupLimitSwitches(); // Configure limit switches.
    network.connect(); // Start WiFi connection.
    if(network.areWeConnected() == true) // If we are on the WiFi network.
    {
@@ -107,7 +108,7 @@ void setup()
  * ==========================================================================*/
 void loop() 
 {
-//   updateStatusLed(); // Make update to status LED on reset button.
+   checkLimitSwitches(); // Make update to status LED on reset button.
    monitorWebServer(); // Handle any pending web client requests. 
    checkMqtt(); // Check the MQTT message queue for incoming commands.
 } // loop()  
