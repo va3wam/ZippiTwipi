@@ -15,16 +15,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus0 - wire() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus0_speed 400000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for ESP32 I2C
-#define I2C_bus0_SDA 23 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 0
-#define I2C_bus0_SCL 22 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 0
+#define I2C_bus0_speed 100000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for MD25 I2C
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus1 - wire1() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus1_speed 100000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for ESP32 I2C
-#define I2C_bus1_SDA 17 // Define pin on the board used for Serial Data Line (SDA) for I2C bus 1
-#define I2C_bus1_SCL 21 // Define pin on the board used for Serial Clock Line (SCL) for I2C bus 1
+#define I2C_bus1_speed 400000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for ESP32 I2C
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C device addresses 
@@ -53,29 +49,28 @@ void identifyDevice(int deviceAddress)
   {
     case rightOLED_I2C_ADD:    
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as Right OLED", deviceAddress, deviceAddress);
-      oledConnected = true;
       break;
     case leftOLED_I2C_ADD:    
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as Left OLED", deviceAddress, deviceAddress);
       break;
     case dcMotorController:    
+      motorControllerConnected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as MD25 motor controller", deviceAddress, deviceAddress);
       break;
     case MPU6050_I2C_ADD:
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as MPU6050", deviceAddress, deviceAddress);
       break;
     case LCD16x2:
+      ledConnected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as 16x2 LCD screen", deviceAddress, deviceAddress);
       break;
     case PCA9685ServoDriverAllCall:
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as PCA9685 16-channel 12-bit servo motor driver ALL CALL", deviceAddress, deviceAddress);
       break;
     case PCA9685ServoDriver1:
-      motorController1Connected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as PCA9685 16-channel 12-bit servo motor driver 1", deviceAddress, deviceAddress);
       break;
     case PCA9685ServoDriver2:
-      motorController2Connected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as PCA9685 16-channel 12-bit servo motor driver 2", deviceAddress, deviceAddress);
       break;
     case PCA9685ServoDriver3:
