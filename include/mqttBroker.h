@@ -27,7 +27,7 @@ String result[2] = {"false","true"}; // Provide english lables for true and flas
 bool connectToMqttBroker(aaNetwork &network)
 {
    network.getUniqueName(uniqueNamePtr); // Puts unique name value into uniqueName[]
-   Log.noticeln("<connectToMqttBroker> Hexbot unique network name = %s.", uniqueName);
+   Log.noticeln("<connectToMqttBroker> Unique network name = %s.", uniqueName);
    Log.noticeln("<connectToMqttBroker> Health topic = %s.", HEALTH_MQTT_TOPIC);
    strcpy(healthTopicTree, uniqueName);
    strcat(healthTopicTree, HEALTH_MQTT_TOPIC);
