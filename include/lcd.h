@@ -1,6 +1,6 @@
-#ifndef led_h // Start of precompiler check to avoid dupicate inclusion of this code block.
+#ifndef lcd_h // Start of precompiler check to avoid dupicate inclusion of this code block.
 
-#define led_h // Precompiler macro used for precompiler check.
+#define lcd_h // Precompiler macro used for precompiler check.
 
 #include <main.h>
 const uint8_t lcdColumns = 16; // Number of characters that fint on one row of LCD.
