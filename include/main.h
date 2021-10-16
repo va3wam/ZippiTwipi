@@ -15,27 +15,25 @@
 #include <aaFlash.h> // Use Flash memory to store values that persist past reboot.
 #include <aaMqtt.h> // Use MQTT for remote management and monitoring.
 #include <known_networks.h> // String arrays of known Access Points and their passwords.
-#include <InverseK.h> // https://github.com/cgxeiji/CGx-InverseK.
 #include <Wire.h> // Required for I2C communication.
 #include <Adafruit_PWMServoDriver.h> // https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library.
 #include <ArduinoLog.h> // https://github.com/thijse/Arduino-Log.
+#include <LiquidCrystal_I2C.h> //https://github.com/tonykambo/LiquidCrystal_I2C
 /*******************************************************************************
  * @section codeModules Functions put into files according to function.
  * @details Order functions here in a way that ensures that variables get 
  * declared in one function prior to being referenced by another function. 
  *******************************************************************************/
 #include <huzzah32_gpio_pins.h> // Map pins on Adafruit Huzzah32 dev board to friendly names.
-#include <hexbot_gpio_pins.h> // Map Hexbot specific pin naming to generic development board pin names. 
+#include <zippy_gpio_pins.h> // Map Hexbot specific pin naming to generic development board pin names. 
 #include <setupSerial.h> // Serial port initialization.
 #include <configDetails.h> // Show the environment details of this application.
 #include <startWebServer.h> // Start up the web server service. 
 #include <mqttBroker.h> // Establish connect to the the MQTT broker.
 #include <monitorWebServer.h> // Monitor the web server service.
 #include <i2c.h> // Scan I2C buses to see what devices are present.
-#include <ikLibrary.h> // InverseK.h inverted kinematic functions.
-#include <servoLegs.h> // Control leg servos.
-#include <oled.h> // Control OLED.
-#include <daeIK.h> // Doug's inverted kinetics functions. 
+#include <led.h> // Control LED.
+#include <mobility.h> // Robot drive train. 
 /************************************************************************************
  * @section mainDeclare Declare functions.
  ************************************************************************************/
