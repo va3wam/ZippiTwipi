@@ -56,4 +56,22 @@ void showCfgDetails()
    } // else
 } //showCfgDetails()
 
+/** 
+ * @brief Check to see how the boot up process went.
+ * =================================================================================*/
+/*
+void checkBoot()
+{
+   if(networkConnected == true && mqttBrokerConnected == true && lcdConnected == true && mobilityStatus == true)
+   {
+      Log.verboseln("<checkBoot> Bootup was normal. Set RGB LED to normal colour."); 
+      setStdRgbColour(BLUE); // Indicates that bootup was normal.
+   } // if
+   else
+   {
+      Log.verboseln("<checkBoot> Bootup had an issue. Set RGB LED to warning colour."); 
+      setStdRgbColour(YELLOW); // Indicates that there was a bootup issue.
+   } // else
+} // checkBoot
+*/
 #endif // End of precompiler protected code block
