@@ -29,7 +29,8 @@ typedef struct
    uint32_t greenDutyCycle; // Up time of the PWM signal. Ranges from 0-256. 127 is a 50% duty cycle for example.
    uint32_t blueDutyCycle; // Up time of the PWM signal. Ranges from 0-256. 127 is a 50% duty cycle for example.
 }struct_Colour; 
-struct_Colour statusColour[numColoursSupported]; // Array of colours
+struct_Colour statusColour[numColoursSupported]; // Array of colours.
+struct_Colour memColour; // Used to switch back RGB LED colour when it is temporarily changed.
 
 /**
  * @brief Set up a structure array of pre-defined colours for RGB LED.
@@ -98,6 +99,33 @@ void createPredefinedColours()
 } // createPredefinedColours()
 
 /**
+ * @brief Save the current RGB values of the reset button LED to memory.
+ * @details Useful when you want to be able to temporarily change the colour
+ * of the RGB LED on the reset button but want to be able to set it back to
+ * the same colour afterwards.
+ * ==========================================================================*/
+void saveRgbColour()
+{
+   Log.verboseln("<saveRgbColour> Save Red = %d, Green = %d, Blue = %d.", ledcRead(PWM_RED_CHANNEL), ledcRead(PWM_GREEN_CHANNEL), ledcRead(PWM_BLUE_CHANNEL));
+   memColour.redDutyCycle = ledcRead(PWM_RED_CHANNEL);
+   memColour.greenDutyCycle = ledcRead(PWM_GREEN_CHANNEL);
+   memColour.blueDutyCycle = ledcRead(PWM_BLUE_CHANNEL);
+} // saveRgbColour()
+
+/**
+ * @brief Set the RGB values of the reset button LED from memory.
+ * @details Set the value of the RGB LED inside the reset button using the 
+ * value stored in memory by the last call t the function rememberCurRgbColour.
+ * ==========================================================================*/
+void loadRgbColour()
+{
+   Log.verboseln("<loadRgbColour> Load Red = %d, Green = %d, Blue = %d.", memColour.redDutyCycle, memColour.greenDutyCycle, memColour.blueDutyCycle);
+   ledcWrite(PWM_RED_CHANNEL, memColour.redDutyCycle);
+   ledcWrite(PWM_GREEN_CHANNEL, memColour.greenDutyCycle);
+   ledcWrite(PWM_BLUE_CHANNEL, memColour.blueDutyCycle);
+} // loadRgbColour()
+
+/**
  * @brief Allows you to create a custom colour for the reset button RGB LED.
  * @param red Duty cycle of red LED inside the reset button RGB LED. 
  * @param green Duty cycle of green LED inside the reset button RGB LED. 
@@ -125,7 +153,7 @@ void setCustRgbColour(uint32_t red, uint32_t green, uint32_t blue)
    ledcWrite(PWM_RED_CHANNEL, redDC); // Set RGB LED red duty cycle.
    ledcWrite(PWM_GREEN_CHANNEL, greenDC); // Set RGB LED red green duty cycle.
    ledcWrite(PWM_BLUE_CHANNEL, blueDC); // Set RGB LED red blue duty cycle.
-//   Log.verboseln("<setCustRgbColour> Red = %d, Green = %d, Blue = %d.", redDC, greenDC, blueDC);   
+   Log.verboseln("<setCustRgbColour> Red = %d, Green = %d, Blue = %d.", redDC, greenDC, blueDC);   
 } // setCustRgbColour()
 
 /**
@@ -136,26 +164,25 @@ void setStdRgbColour(uint8_t ledColour)
    uint32_t redDC;
    uint32_t greenDC;
    uint32_t blueDC;
-
    if(ledColour - 1 > numColoursSupported) // 8 predefined colours (7 and below valid).
    {
       ledColour = GREEN;
-//      Log.warningln("<setStdRgbColour> Requested colour %d unknown. Setting RGB LED to %s.", statusColour[ledColour].name.c_str());
+      Log.warningln("<setStdRgbColour> Requested colour %d unknown. Setting RGB LED to %s.", statusColour[ledColour].name.c_str());
    } // if
    else
    {
-//      Log.verboseln("<setStdRgbColour> Set status RGB LED to %s.", statusColour[ledColour].name.c_str());
+      Log.verboseln("<setStdRgbColour> Set status RGB LED to %s.", statusColour[ledColour].name.c_str());
    } // else
    if(commonAnode) // RGB LED has commmon anode. 
    {   
-//      Log.verboseln("<setStdRgbColour> RGB LED has common anode. Inverting duty cycle values.");
+      Log.verboseln("<setStdRgbColour> RGB LED has common anode. Inverting duty cycle values.");
       redDC = 256 - statusColour[ledColour].redDutyCycle; // Invert red duty cycle.
       greenDC = 256 - statusColour[ledColour].greenDutyCycle; // Invert green duty cycle.
       blueDC = 256 - statusColour[ledColour].blueDutyCycle; // Invert blue duty cycle.
    } //if
    else // RGB LED has commmon cathode.
    {
-//      Log.verboseln("<setStdRgbColour> RGB LED has common cathode. Use unaltered duty cycle values.");
+      Log.verboseln("<setStdRgbColour> RGB LED has common cathode. Use unaltered duty cycle values.");
       redDC = statusColour[ledColour].redDutyCycle; 
       greenDC = statusColour[ledColour].greenDutyCycle;
       blueDC = statusColour[ledColour].blueDutyCycle;
@@ -163,7 +190,7 @@ void setStdRgbColour(uint8_t ledColour)
    ledcWrite(PWM_RED_CHANNEL, redDC); // Set RGB LED red duty cycle.
    ledcWrite(PWM_GREEN_CHANNEL, greenDC); // Set RGB LED red green duty cycle.
    ledcWrite(PWM_BLUE_CHANNEL, blueDC); // Set RGB LED red blue duty cycle.
-//   Log.verboseln("<setStdRgbColour> Red = %d, Green = %d, Blue = %d.", redDC, greenDC, blueDC);
+   Log.verboseln("<setStdRgbColour> Red = %d, Green = %d, Blue = %d.", redDC, greenDC, blueDC);
 } // setStdRgbColour()
 
 /**
@@ -174,9 +201,6 @@ void setStdRgbColour(uint8_t ledColour)
  * ==========================================================================*/
 void setupStatusLed()
 {
-   //const uint32_t redLedSetting = 0; // set value from 0 - 256.
-   //const uint32_t greenLedSetting = 0; // set value from 0 - 256.
-   //const uint32_t blueLedSetting = 256; // set value from 0 - 256.
    createPredefinedColours(); // Create predefined colour settings.
    Log.traceln("<setupStatusLed> Initialize status RGB LED on reset button.");
    pinMode(resetRedLED, OUTPUT); // Set GPIO pin connected to red LED inside of the reset button RGB LED to output.
@@ -188,12 +212,6 @@ void setupStatusLed()
    ledcAttachPin(resetGreenLED, PWM_GREEN_CHANNEL); // Attach PWM channel to pin connected to green LED on reset button.
    ledcSetup(PWM_BLUE_CHANNEL, PWM_FREQ, PWM_RESOLUTION); // Configure blue LED PWM properties.
    ledcAttachPin(resetBlueLED, PWM_BLUE_CHANNEL); // Attach PWM channel to pin connected to blue LED on reset button.
-   Log.noticeln("<setupStatusLed> Set RGB LED colour to YELLOW.");
-//   setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour to Green. 
-//   ledcWrite(PWM_RED_CHANNEL, 256 - 256); // Set RGB LED red duty cycle.
-//   ledcWrite(PWM_GREEN_CHANNEL, 256 - 256); // Set RGB LED red green duty cycle.
-//   ledcWrite(PWM_BLUE_CHANNEL, 256 - 0); // Set RGB LED red blue duty cycle. 
-   setStdRgbColour(WHITE);
 } //setupStatusLed()
 
 #endif // End of precompiler protected code block
