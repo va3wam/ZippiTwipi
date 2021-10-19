@@ -36,6 +36,7 @@
 #include <mobility.h> // Robot drive train. 
 #include <statusLED.h> // Control status LEDs.
 #include <limitSwitch.h> // Limit switches used to detect robot falling over.
+#include <mobility.h> // Motors used to move robot.
 /************************************************************************************
  * @section mainDeclare Declare functions.
  ************************************************************************************/
