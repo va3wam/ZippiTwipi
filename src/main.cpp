@@ -41,6 +41,24 @@
 #include <main.h> // Header file for all libraries needed by this program.
 unsigned long timer; // Milli count for next action.
 
+/** 
+ * @brief Check to see how the boot up process went.
+ * =================================================================================*/
+void checkBoot()
+{
+   Log.traceln("<checkBoot> Checking boot status flags."); 
+   if(networkConnected == true && mqttBrokerConnected == true && lcdConnected == true && mobilityStatus == true)
+   {
+      Log.verboseln("<checkBoot> Bootup was normal. Set RGB LED to normal colour."); 
+      setStdRgbColour(BLUE); // Indicates that bootup was normal.
+   } // if
+   else
+   {
+      Log.verboseln("<checkBoot> Bootup had an issue. Set RGB LED to warning colour."); 
+      setStdRgbColour(YELLOW); // Indicates that there was a bootup issue.
+   } // else
+} // checkBoot
+
 /**
  * @brief Standard Arduino initialization routine.
  * ==========================================================================*/
@@ -49,17 +67,23 @@ void setup()
    setupSerial(); // Set serial baud rate. 
    Log.begin(LOG_LEVEL_VERBOSE, &Serial, true);
    Log.traceln("<setup> Start of setup.");  
+   Log.verboseln("<setup> Initialize I2C buses."); 
    Wire.begin(I2C_BUS0_SDA, I2C_BUS0_SCL, I2C_bus0_speed); // Init I2C bus0.
    Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_bus1_speed); // Init I2C bus1.
+   Log.verboseln("<setup> Initialize status RGB LED."); 
    setupStatusLed(); // Configure the status LED on the reset button.
+   setStdRgbColour(WHITE); // Indicates that boot up is in progress.
+   Log.verboseln("<setup> Initialize limit switches."); 
    setupLimitSwitches(); // Configure limit switches.
-/*
+   Log.verboseln("<setup> Set up wifi connection."); 
    network.connect(); // Start WiFi connection.
    if(network.areWeConnected() == true) // If we are on the WiFi network.
    {
       networkConnected = true;
       Log.noticeln("<setup> Connection to network successfully estabished.");
+      Log.verboseln("<setup> Initialize local web services."); 
       startWebServer(); // Start up web server.
+      Log.verboseln("<setup> Initialize MQTT broker connection."); 
       bool tmp = connectToMqttBroker(network); // Connect to MQTT broker.
       if(tmp == true) // If we found an MQTT broker.
       {
@@ -77,6 +101,7 @@ void setup()
       networkConnected = false;
       Log.errorln("<setup> Not connencted to the network. No MQTT or web interface.");
    } // else
+   Log.verboseln("<setup> Look for I2C devices."); 
    scanBus0(); // Scan bus0 and show connected devices.
    scanBus1(); // Scan bus1 and show connected devices.
    if(lcdConnected == true) // If an LCD was found on the I2C bus.
@@ -99,21 +124,12 @@ void setup()
       Log.errorln("<setup> Motor driver not connencted to I2C bus. No motion is possible.");
       mobilityStatus = false;
    } //else
+   Log.verboseln("<setup> Display robot configuration in console trace."); 
    showCfgDetails(); // Show all configuration details in one summary.
-   timer = millis(); // Timer for motor driver signalling.
-*/
-   // Put into statusLED.h as a routine and add other checks such as MPU6050 etc.
-   // Allow for warning vs error colour per type of error.
-   if(networkConnected == true && mqttBrokerConnected == true && lcdConnected == true && mobilityStatus == true)
-   {
-      setStdRgbColour(BLUE); // Indicate normal operations
-   } // if
-   else
-   {
-      setStdRgbColour(YELLOW); // Indicate normal operations
-   } // else
-   
+   Log.verboseln("<setup> Review status flags to see how boot sequence went."); 
+   checkBoot();
    Log.traceln("<setup> End of setup."); 
+   timer = millis(); // Timer for motor driver signalling.
 } // setup()
 
 /**
