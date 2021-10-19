@@ -38,26 +38,46 @@
 
 #include <Arduino.h> // Required for variable type declarations. Arduino Core for ESP32. Comes with Platform.io
 
-const int8_t PIN_LBL_TX = 17; // Physical pin 15
-const int8_t PIN_LBL_RX = 16; // Physical pin 14
-const int8_t PIN_LBL_SCL = 22; // Physical pin 18
-const int8_t PIN_LBL_SDA = 23; // Physical pin 17 
-const int8_t PIN_LBL_SCK = 5; // Physical pin 11
-const int8_t PIN_LBL_MO = 18; // Physical pin 12
-const int8_t PIN_LBL_MI = 19; // Physical pin 13
+// Adafruit Huzzah32 has 28 pins. Numbering system requires the board component side to be face up and the USB connector
+// pointed away from you. This results in the 16 pin header being on the left and the 12 pin header on the right. 
+// 
+// Values are GPIO numbers used in code to ref pins.
+// The first 4 pins on the long side (orient with USB up and long side to the left).
+///////////////////////////////////////////////////////////////////////////////
+// Left side (long pin header). Start counting physical pins from the upper 
+// left corner.
+///////////////////////////////////////////////////////////////////////////////
+// Physical pin 1 is labeled RST button
+// Physical pin 2 is labeled 3V
+// Physical pin 3 is labeled NC
+// Physical pin 4 is labeled GND
 const int8_t PIN_LBL_A0 = 26; // Physical pin 5
 const int8_t PIN_LBL_A1 = 25; // Physical pin 6
 const int8_t PIN_LBL_A2 = 34; // Physical pin 7
 const int8_t PIN_LBL_A3 = 39; // Physical pin 8
 const int8_t PIN_LBL_A4 = 36; // Physical pin 9
 const int8_t PIN_LBL_A5 = 4; // Physical pin 10
+const int8_t PIN_LBL_SCK = 5; // Physical pin 11
+const int8_t PIN_LBL_MO = 18; // Physical pin 12
+const int8_t PIN_LBL_MI = 19; // Physical pin 13
+const int8_t PIN_LBL_RX = 16; // Physical pin 14
+const int8_t PIN_LBL_TX = 17; // Physical pin 15
 const int8_t PIN_LBL_21 = 21; // Physical pin 16
-const int8_t PIN_LBL_13 = 13; // Physical pin 25
-const int8_t PIN_LBL_12 = 12; // Physical pin 24
-const int8_t PIN_LBL_27 = 27; // Physical pin 23
-const int8_t PIN_LBL_33 = 33; // Physical pin 22
-const int8_t PIN_LBL_15 = 15; // Physical pin 21
-const int8_t PIN_LBL_32 = 32; // Physical pin 20
+///////////////////////////////////////////////////////////////////////////////
+// Right side (short pin header) Start counting physical pins from the 
+// bottom right corner.
+///////////////////////////////////////////////////////////////////////////////
+const int8_t PIN_LBL_SDA = 23; // Physical pin 17 
+const int8_t PIN_LBL_SCL = 22; // Physical pin 18
 const int8_t PIN_LBL_14 = 14; // Physical pin 19
+const int8_t PIN_LBL_32 = 32; // Physical pin 20
+const int8_t PIN_LBL_15 = 15; // Physical pin 21
+const int8_t PIN_LBL_33 = 33; // Physical pin 22
+const int8_t PIN_LBL_27 = 27; // Physical pin 23
+const int8_t PIN_LBL_12 = 12; // Physical pin 24
+const int8_t PIN_LBL_13 = 13; // Physical pin 25
+// Physical pin 26 is labeled USB
+// Physical pin 27 is labeled EN
+// Physical pin 28 is labeled BAT
 
 #endif // End of conditional preprocessor code
