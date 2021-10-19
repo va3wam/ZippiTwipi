@@ -3,8 +3,11 @@
 #define limitSwitch_h // Precompiler macro used for precompiler check.
 
 #include <main.h> // Header file for all libraries needed by this program.
-const bool frontSwitch = 0; // Indicates front limit switch
-const bool backSwitch = 1; // Indicates back limit switch
+
+const int8_t NO_SWITCH = 0; // No limit switch is pressed.
+const int8_t FRONT_SWITCH = 1; // The front limit switch is pressed.
+const int8_t BACK_SWITCH = 2; // The back limit switch is pressed.
+int8_t memSwitch = 0; // Track what the switch was set to when last checked.
 
 /**
  * @brief Set up the limit switches used to detect when the robot falls over.
@@ -22,60 +25,45 @@ void setupLimitSwitches()
 
 /**
  * @brief Check to see if the specified switch is contacting the ground.
- * @param String switchName Front or Back
- * @return bool True/False
-===================================================================================================*/
-bool checkSwitch(int8_t switchName)
-{
-   switch(switchName)
-   {
-      case frontSwitch: // If we are interested in the front limit switch
-         return(digitalRead(frontLimitSwitch));
-         break;
-      default: // If we are interested in the back limit switch
-         return(digitalRead(backLimitSwitch));
-         break;
-   } //switch
-} // checkSwitch()
-
-/**
- * @brief Check to see if the specified switch is contacting the ground.
-===================================================================================================*/
+==============================================================================*/
 void checkLimitSwitches()
 {
-//   int8_t redLedSetting; // Red LED inside reset switch RGB LED. Set value from 0 - 255.
-//   int8_t greenLedSetting; // Green LED inside reset switch RGB LED. Set value from 0 - 255.
-//   int8_t blueLedSetting; // Blue LED inside reset switch RGB LED. Set value from 0 - 255.
-
-   if(checkSwitch(frontLimitSwitch) == false) // Front limit switch pressed turns LED xxx.
+   if((digitalRead(frontLimitSwitch) == false)) // Front limit switch pressed?
    {
-      Log.verboseln("<checkLimitSwitches> Front limit switch tripped.");
-      setStdRgbColour(PINK);
-//      redLedSetting = 128; // set value from 0 - 255.
-//      greenLedSetting = 255; // set value from 0 - 255.
-//      blueLedSetting = 0; // set value from 0 - 255.
-//      setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
-      return;
+      if(memSwitch != FRONT_SWITCH) // Was not pressed during last check?
+      {
+         Log.verboseln("<checkLimitSwitches> Front limit switch tripped. memSwitch = %d", memSwitch);
+         memSwitch = FRONT_SWITCH;
+         saveRgbColour();
+         setStdRgbColour(PINK);
+         return;
+      } //if
+      else // Was pressed during last check. No need to do anything further.
+      {
+         return;
+      } // else
    } //if
-   
-   if(checkSwitch(backLimitSwitch) == false) // Back limit switch pressed turns LED xxx.
+   if(digitalRead(backLimitSwitch) == false) // Back limit switch pressed?
    {
-      Log.verboseln("<checkLimitSwitches> Back limit switch tripped.");
-      setStdRgbColour(AQUA);
-//      redLedSetting = 255; // set value from 0 - 255.
-//      greenLedSetting = 128; // set value from 0 - 255.
-//      blueLedSetting = 0; // set value from 0 - 255.
-//      setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
-      return;
+      if(memSwitch != BACK_SWITCH) // Was not pressed during last check?
+      {
+         Log.verboseln("<checkLimitSwitches> Back limit switch tripped. memSwitch = %d", memSwitch);
+         memSwitch = BACK_SWITCH;
+         saveRgbColour();
+         setStdRgbColour(AQUA); // Temporarily set RGB LED to indicate robot lean
+         return;
+      } // if
+      else // Was pressed during last check. No need to do anything further.
+      {
+         return;
+      } // else
+   } // if 
+   if(memSwitch != NO_SWITCH) // No switched pressed this time nor the last time we checked. 
+   {
+      Log.verboseln("<checkLimitSwitches> No limit switch tripped. memSwitch = %d", memSwitch);
+      memSwitch = NO_SWITCH; // Track the fact that now no bumper switches are pressed.
+      loadRgbColour(); // Set RGB LED back to colour it was before the switches tripped.
    } // if
-
-   // No limit switch pressed turns LED green.
-//   Log.verboseln("<checkLimitSwitches> No limit switch tripped.");
-   setStdRgbColour(GREEN); // Go back to old colour (may not  have been green).
-//   redLedSetting = 0; // set value from 0 - 255.
-//   greenLedSetting = 255; // set value from 0 - 255.
-//   blueLedSetting = 0; // set value from 0 - 255.
-//   setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
    return;
 } // checkLimitSwitches()
 
