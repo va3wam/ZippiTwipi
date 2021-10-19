@@ -53,6 +53,7 @@ void setup()
    Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_bus1_speed); // Init I2C bus1.
    setupStatusLed(); // Configure the status LED on the reset button.
    setupLimitSwitches(); // Configure limit switches.
+/*
    network.connect(); // Start WiFi connection.
    if(network.areWeConnected() == true) // If we are on the WiFi network.
    {
@@ -78,10 +79,10 @@ void setup()
    } // else
    scanBus0(); // Scan bus0 and show connected devices.
    scanBus1(); // Scan bus1 and show connected devices.
-   if(ledConnected == true) // If an OLED was found on the I2C bus.
+   if(lcdConnected == true) // If an LCD was found on the I2C bus.
    {
-      Log.traceln("<setup> Initialize LED.");
-      initLed();
+      Log.traceln("<setup> Initialize LCD.");
+      initLcd();
    } // if
    else // If an OLED was NOT found on the I2C bus.
    {
@@ -100,6 +101,18 @@ void setup()
    } //else
    showCfgDetails(); // Show all configuration details in one summary.
    timer = millis(); // Timer for motor driver signalling.
+*/
+   // Put into statusLED.h as a routine and add other checks such as MPU6050 etc.
+   // Allow for warning vs error colour per type of error.
+   if(networkConnected == true && mqttBrokerConnected == true && lcdConnected == true && mobilityStatus == true)
+   {
+      setStdRgbColour(BLUE); // Indicate normal operations
+   } // if
+   else
+   {
+      setStdRgbColour(YELLOW); // Indicate normal operations
+   } // else
+   
    Log.traceln("<setup> End of setup."); 
 } // setup()
 
@@ -109,6 +122,6 @@ void setup()
 void loop() 
 {
    checkLimitSwitches(); // Make update to status LED on reset button.
-   monitorWebServer(); // Handle any pending web client requests. 
-   checkMqtt(); // Check the MQTT message queue for incoming commands.
+//   monitorWebServer(); // Handle any pending web client requests. 
+//   checkMqtt(); // Check the MQTT message queue for incoming commands.
 } // loop()  

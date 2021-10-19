@@ -43,39 +43,39 @@ bool checkSwitch(int8_t switchName)
 ===================================================================================================*/
 void checkLimitSwitches()
 {
-   int8_t redLedSetting; // Red LED inside reset switch RGB LED. Set value from 0 - 255.
-   int8_t greenLedSetting; // Green LED inside reset switch RGB LED. Set value from 0 - 255.
-   int8_t blueLedSetting; // Blue LED inside reset switch RGB LED. Set value from 0 - 255.
+//   int8_t redLedSetting; // Red LED inside reset switch RGB LED. Set value from 0 - 255.
+//   int8_t greenLedSetting; // Green LED inside reset switch RGB LED. Set value from 0 - 255.
+//   int8_t blueLedSetting; // Blue LED inside reset switch RGB LED. Set value from 0 - 255.
 
    if(checkSwitch(frontLimitSwitch) == false) // Front limit switch pressed turns LED xxx.
    {
       Log.verboseln("<checkLimitSwitches> Front limit switch tripped.");
-//      setStatusLedColour(PINK);
-      redLedSetting = 128; // set value from 0 - 255.
-      greenLedSetting = 255; // set value from 0 - 255.
-      blueLedSetting = 0; // set value from 0 - 255.
-      setResetButtonColor(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
+      setStdRgbColour(PINK);
+//      redLedSetting = 128; // set value from 0 - 255.
+//      greenLedSetting = 255; // set value from 0 - 255.
+//      blueLedSetting = 0; // set value from 0 - 255.
+//      setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
       return;
    } //if
    
    if(checkSwitch(backLimitSwitch) == false) // Back limit switch pressed turns LED xxx.
    {
       Log.verboseln("<checkLimitSwitches> Back limit switch tripped.");
-//      setStatusLedColour(AQUA);
-      redLedSetting = 255; // set value from 0 - 255.
-      greenLedSetting = 128; // set value from 0 - 255.
-      blueLedSetting = 0; // set value from 0 - 255.
-      setResetButtonColor(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
+      setStdRgbColour(AQUA);
+//      redLedSetting = 255; // set value from 0 - 255.
+//      greenLedSetting = 128; // set value from 0 - 255.
+//      blueLedSetting = 0; // set value from 0 - 255.
+//      setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
       return;
    } // if
 
    // No limit switch pressed turns LED green.
 //   Log.verboseln("<checkLimitSwitches> No limit switch tripped.");
-//   setStatusLedColour(GREEN);
-   redLedSetting = 0; // set value from 0 - 255.
-   greenLedSetting = 255; // set value from 0 - 255.
-   blueLedSetting = 0; // set value from 0 - 255.
-   setResetButtonColor(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
+   setStdRgbColour(GREEN); // Go back to old colour (may not  have been green).
+//   redLedSetting = 0; // set value from 0 - 255.
+//   greenLedSetting = 255; // set value from 0 - 255.
+//   blueLedSetting = 0; // set value from 0 - 255.
+//   setCustRgbColour(redLedSetting, greenLedSetting, blueLedSetting); // Set Reset button's RGB LED colour.
    return;
 } // checkLimitSwitches()
 

@@ -61,7 +61,7 @@ void identifyDevice(int deviceAddress)
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as MPU6050", deviceAddress, deviceAddress);
       break;
     case LCD16x2:
-      ledConnected = true;
+      lcdConnected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as 16x2 LCD screen", deviceAddress, deviceAddress);
       break;
     case PCA9685ServoDriverAllCall:

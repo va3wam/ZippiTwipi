@@ -47,6 +47,7 @@ void displaySplashScreen()
 {
    int8_t row0 = 0; // First row of LCD.
    int8_t row1 = 1; // Second row of LCD.
+   Log.traceln("<displaySplashScreen> Display splash screen on LCD.");
    String robotIP = "R:" + WiFi.localIP().toString(); 
    String mqttBrokerIP = "B:" + getMqttBrokerIP().toString();
    placeTextHcentre(robotIP, row0);
@@ -54,11 +55,11 @@ void displaySplashScreen()
 } // displaySplashScreen()
 
 /**
- * @brief Initiaize LED display.
+ * @brief Initiaize LCD display.
  * ==========================================================================*/
-void initLed() 
+void initLcd() 
 {
-   Log.verboseln("<initLed> 2x16 LED test");
+   Log.traceln("<initLcd> Initialize 2x16 LCD.");
    lcd.init(I2C_BUS0_SDA, I2C_BUS0_SCL); // initialize the lcd 
    lcd.setBacklight(true);
    displaySplashScreen();

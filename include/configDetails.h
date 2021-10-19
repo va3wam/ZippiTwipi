@@ -9,7 +9,7 @@ aaChip appCpu; // Access information about the ESP32 application microprocessor 
 aaNetwork network(HOST_NAME_PREFIX); // WiFi session management.
 bool networkConnected = false; // Track WiFi connectivity status.
 bool mqttBrokerConnected = false; // Track MQTT broker connection status.
-bool ledConnected = false; // Track LED I2C connection status.
+bool lcdConnected = false; // Track LED I2C connection status.
 bool motorControllerConnected = false; // Track motor controller I2C connectionstatus.
 
 /** 
@@ -38,7 +38,7 @@ void showCfgDetails()
    {
       Log.verboseln("<showCfgDetails> Network connection status = FALSE");
    } // else
-   if(ledConnected == true)
+   if(lcdConnected == true)
    {
       Log.verboseln("<showCfgDetails> LED connection status = TRUE.");
    } // if
