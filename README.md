@@ -4,6 +4,12 @@
 
 This repository contains the Arduino source code that runs on an embedded processor at the heart of the six legged robot we call HexBot. The goals of this project can be found [here](goals.md). 
 
+# State of things
+
+This is an ongoing experimental platform. Testing has shown that the level of control over the DC motors using the MD25 controller
+via I2C may not be sufficiently refined for what we think is required for balancing on two wheels. Also note that the use of the 
+amMD25 and MD25 libraries is being phased ut in favour of using the mobility.h include file.
+
 # Getting Started
 
 This project requires that you have a Hexbot robot. The Robot is made up of a custom robot chassis and PCB as well as the code in this repository. Without a version 3 or later Hexbot robot this code will not be very useful to you. 
