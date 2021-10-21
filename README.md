@@ -1,90 +1,110 @@
-<img src="./img/zippiTwipi.jpg" alt="ZipiTwipi Robot" width="800" height="500"> 
+![hexaBot](img/hexbotBanner.png)
 
-# ZippiTwipi
+[![LICENSE](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/mmistakes/minimal-mistakes/master/LICENSE)
 
-This repository contains all of the information regarding a DC motor based two wheeled inverted pendulum robot experimental platform. This initiative is running in parallel with the [TWIPe repository](https://github.com/va3wam/TWIPe/wiki). This repository contains C++ source code intended to run on the Adafruit Huzzah32 development board.  
+This repository contains the Arduino source code that runs on an embedded processor at the heart of the six legged robot we call HexBot. The goals of this project can be found [here](goals.md). 
 
-## Getting Started
+# State of things
 
-Full details about this project can be read on our [wiki](https://github.com/va3wam/ZippiTwipi/wiki). 
+This is an ongoing experimental platform. Testing has shown that the level of control over the DC motors using the MD25 controller
+via I2C may not be sufficiently refined for what we think is required for balancing on two wheels. Also note that the use of the 
+amMD25 and MD25 libraries is being phased ut in favour of using the mobility.h include file.
+
+# Getting Started
+
+This project requires that you have a Hexbot robot. The Robot is made up of a custom robot chassis and PCB as well as the code in this repository. Without a version 3 or later Hexbot robot this code will not be very useful to you. 
+
+# Documentation
+
+Here is an index of links to helpful documents found in this repository.
+
+## Constructing a Hexbot Robot
+* List of [hardware components](/docs/hexbotHardware.md).
+* Hexbot [assembly instructions](/docs/hexbotAssembly.md).
+* How to [wire the motors](/docs/wireMotors.md).
+
+## Hexbot User Guides
+* Hexbot's [Web interface](/docs/hexbotWebInterface.md).
+* How to [configure NVRAM remotely](/docs/hexbotWebInterface.md#config-updater-screen).
+* How to [perform OTA updates](/docs/hexbotWebInterface.md#ota-updater-screen).
+* Available [MQTT commands](/docs/mqttCommands.md).
+* [Hexbot Operations manual](/docs/hexbotOperationManual.md).
+
+## Hexbot Developers Guide
 
 ### Prerequisites
 
-The software in this repository was written in the C++ (Arduino) language using Microsoft's Visual Source Code IDE and the library management was handled using the plugin PlatformIO. As such, source code files have the extenion "cpp" denoting c++ rather than the extension "ino" denoting arduino.   
+In order to make use of the code in this repository you will require the following items.
+
+* A Hexbot robot made up of [this hardware](/docs/hexbotHardware.md).
+* The [Hexbot custom PCB](/docs/hexbotCircuit.md).
+* An [MQTT broker](/docs/MQTTbroker.md) used by the robot's [MQTT web interface](/docs/hexbotWebInterface.md).  
+* A [clone](/docs/cloneRepository.md) of the Hexbot gitHub repository into your own local Git repository.
+
+### Development Software Stack
+
+* How to [clone](/docs/cloneRepository.md) the Hexbot gitHub repository.
+* Sample [platformio.ini](AA/platformIO-MAC-example.txt) template.
+* Set up [PlatformIO](https://github.com/va3wam/hexBot/blob/main/docs/cloneRepository.md#set-up-platformio).
+* Recommended Visual Studio Code [plugins](https://github.com/va3wam/hexBot/blob/main/docs/cloneRepository.md#visual-studio-code-plugins).
 
 ### Code Compatability
 
-The Arduino C++ code was written to run on the Espressif ESP WROOM32 "Software On a Chip" (SOC). The development board used for this SOC is the Adafruit Huzzah32 featherboard. Note that some standard Arduino functions such as AnalogWrite() have not been implemented on the ESP32 SOC and alternate functions such as ledcSetup(), ledcAttachPin() and ledcWrite() must be used in their place. There are some additional compatability issues of note as follows:
+Hexbot software runs as a monolithic firmware image. The high level logic and peripheral interactions are handled using Arduino C++. FreeRTOS is used to run a WiFi stack as well as the primitive xTaskCreatePinnedToCore() which is used to manage mutli-threaded process execution.
 
-1. The GPIO pin usage is loosey Adafruit featherboard compliant meaning it will work with some boards such as the OLED board 
-2. This code does not use the Twipe pinout configuration or naming convension so will not port over to a Twipe compliant robot unmodified
-3. This code will NOT run on an ESP8266 unmodified because of both GPIO incompatability as well as some ESP32 specific libraries that are in use 
+Hexbot's firmware is intended to run on the Espressif ESP WROOM32 "Software On a Chip" (SOC). The development board used for this SOC is the [Zerynth DOIT Esp32 DevKit v1](https://testzdoc.zerynth.com/reference/boards/doit_esp32/docs/). ```We may be switching to a different board``` Note that some standard Arduino functions such as AnalogWrite() have not been implemented on the ESP32 SOC and alternate functions such as ledcSetup(), ledcAttachPin() and ledcWrite() must be used in their place. There are some additional compatability issues of note as follows:
+
+* The GPIO pin usage is loosey Adafruit featherboard compliant meaning it will work with some boards such as the Adafruit OLED featherboard.
+* This code will NOT run on an ESP8266 unmodified because of both GPIO incompatability as well as some ESP32 specific libraries that are in use.
 
 ### Installing
 
-There are numerous tutorials on how to install Arduino code onto an ESP WROOM32 from Microsoft's Visual Studio Code. Try out one of the following tutorials or find another one that is more to your liking:
-* [MakerPro](https://maker.pro/arduino/tutorial/how-to-use-visual-studio-code-for-arduino)
-* [Random Nerd](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
+A set of instructions on how to install the source code for VA3WAM projects can be found [here](https://va3wam.github.io/versionControl/).
 
-## Running the tests
+### Testing
 
-At this time there are no automated tests for this application.
+At this time we have no tools or standards for automated testing of Arduino code on an embedded system. 
 
-## Deployment
+### Deployment
 
-This Arduino code was developed using the following set up.
+Use serial over USB to load the inital code onto the embedded system. Subsequent builds can be uploaded using either serial over USB or 
+a [OTA web interface](/docs/webOTA.md) hosted by the robot which allows you to do [OTA](https://en.wikipedia.org/wiki/Over-the-air_programming) updates.
 
 ### Built With
 
-* [Visual Studio Code](https://code.visualstudio.com/) - The IDE
-* [Platformio](https://platformio.org/) - Editor plugin
-* Library Framework - Arduino
-* Hardware platform - espressif32
-* Board - Adafruit Huzzah32 featherboard
+* [Visual Studio Code](https://code.visualstudio.com/) - Text editor.
+* [PlatformIO](https://platformio.org/) - IDE for ESP32 based Arduino development.
 
-### Arduino Libraries
-The following additional libraries are used in the Arduino C++ code:
+If you are new to these tools then you may want to read [this](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/).
 
-* The standard Arduino library that is bundled with PlatformIO
-* The standard Wire library that is bundled with PlatformIO
-* https://github.com/marcoschwartz/LiquidCrystal_I2C
+### Contributing
 
-## Contributing
+Please read [CONTRIBUTING.md](contributing.md) for details on our code
+of conduct, and the process for submitting pull requests to us.
 
-This project is being developed by a couple of buddies. If you wish to get involved in this project feel free to contact us at one of the email addreses listed in the authors section below. All current and planned work for this project is tracked using the [Github projects feature](https://github.com/va3wam/ZippiTwipi/projects). Here are the standards that we follow for all va3wam projects:
+### Versioning
 
-* [Set up your local repo, Git workflow](https://github.com/va3wam/va3wam.github.io/wiki/Software-Version-Control)
-* [Recommended Tool chain](https://github.com/va3wam/va3wam.github.io/wiki/Software-Languages-&-Tools)
-* [va3wam coding standards](https://github.com/va3wam/va3wam.github.io/wiki/Software-Coding-Standards) 
+We use [Semantic Versioning](http://semver.org/) in naming the [releases](https://github.com/va3wam/hexaBot/releases) of this code base. 
 
-## Versioning
+# Kinematic Model
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/va3wam/ZippiTwipi/tags). 
+Hexbot uses an inverse kinematic model to manipulate it's legs. To learn more about our implementation of an inverse kinematic model look <a href="/docs/kinematicModel.md">here</a>.
 
-## Authors
+# Authors
 
-* [Doug](https://github.com/nerdoug) 
-* [va3wam](https://github.com/va3wam) 
+* **[Old Squire](https://github.com/theagingapprentice)**
+* **[Doug Elliott](https://github.com/nerdoug)**
 
-See also the list of [contributors](https://github.com/va3wam/ZippiTwipi/settings/access) who participated in this project.
+# License
 
-## Acknowledgments
+This project is licensed under the [MIT License](license.md).
 
-* Joop Brokking and his [Balancing Robot](http://www.brokking.net/yabr_main.html)
-* Tony DiCola and Adafruit Industries for their MQTT QOS1 Arduino library
-* Jeff Rowberg for the MPU6050 DMP logic
-* DFRobot & John Rickman for their LiquidCrystal I2C LCD display Arduino library
-* The many folks involved in porting the Arduino libraries over to the ESP32
+# Acknowledgments
 
-## Lisence
-[![LICENSE](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/mmistakes/minimal-mistakes/master/LICENSE)
-
-The MIT License (MIT)
-
-Copyright (c) 2013-2020 Michael Rose and contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* Robot chassis design inspired by [Cameron Buss' Swampy the Hexapod](https://grabcad.com/library/swampy-the-hexapod-1).
+* 3 DOF Inverse Kinematic code inspired by [Avatar
+Aymen Nacer](https://github.com/AymenNacer/Forward-and-Inverse-Kinematics-for-3-DOF-Robotic-arm). 
+* Tony DiCola and Adafruit Industries for their MQTT QOS1 Arduino library.
+* Jeff Rowberg for the MPU6050 DMP logic. ```May not use.```
+* DFRobot & John Rickman for their LiquidCrystal I2C LCD display Arduino library. ```May not use.```
+* The many folks involved in porting the Arduino libraries over to the ESP32.

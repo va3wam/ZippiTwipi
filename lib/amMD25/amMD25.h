@@ -21,6 +21,8 @@
 #ifndef amMD25_h
 #define amMD25_h
 
+#include <main.h> // Header file for all libraries needed by this program.
+
 // Define MD25 registers 
 #define MD25RegSpeed1 (byte) 0x00 // Motor1 speed (mode 0,1) or both motors speed (mode 2,3)
                                   // Cast as a byte to stop them being misinterperted as NULL. This is a bug with arduino 1

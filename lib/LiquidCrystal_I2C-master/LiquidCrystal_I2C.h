@@ -3,7 +3,7 @@
 #define LiquidCrystal_I2C_h
 
 #include <inttypes.h>
-#include "Print.h" 
+#include "Print.h"
 #include <Wire.h>
 
 // commands
@@ -75,20 +75,16 @@ public:
   void noBacklight();
   void backlight();
   void autoscroll();
-  void noAutoscroll(); 
+  void noAutoscroll();
   void createChar(uint8_t, uint8_t[]);
-  void createChar(uint8_t location, const char *charmap);
-  // Example: 	const char bell[8] PROGMEM = {B00100,B01110,B01110,B01110,B11111,B00000,B00100,B00000};
-  
-  void setCursor(uint8_t, uint8_t); 
+  void setCursor(uint8_t, uint8_t);
 #if defined(ARDUINO) && ARDUINO >= 100
   virtual size_t write(uint8_t);
 #else
   virtual void write(uint8_t);
 #endif
   void command(uint8_t);
-  void init();
-  void oled_init();
+  void init(uint8_t SDA_PORT, uint8_t SCL_PORT);
 
 ////compatibility API function aliases
 void blink_on();						// alias for blink()
@@ -109,10 +105,10 @@ void off();
 uint8_t init_bargraph(uint8_t graphtype);
 void draw_horizontal_graph(uint8_t row, uint8_t column, uint8_t len,  uint8_t pixel_col_end);
 void draw_vertical_graph(uint8_t row, uint8_t column, uint8_t len,  uint8_t pixel_col_end);
-	 
+
 
 private:
-  void init_priv();
+  void init_priv(uint8_t SDA_PORT, uint8_t SCL_PORT);
   void send(uint8_t, uint8_t);
   void write4bits(uint8_t);
   void expanderWrite(uint8_t);
@@ -122,7 +118,6 @@ private:
   uint8_t _displaycontrol;
   uint8_t _displaymode;
   uint8_t _numlines;
-  bool _oled = false;
   uint8_t _cols;
   uint8_t _rows;
   uint8_t _backlightval;
