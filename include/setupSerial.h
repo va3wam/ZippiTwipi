@@ -3,14 +3,14 @@
 #define setupSerial_h // Precompiler macro used for precompiler check.
 
 #include <main.h> // Header file for all libraries needed by this program.
-unsigned long serialBaudRate = 115200; // Serial terminal baud rate.
+const unsigned long SERIAL_BAUD_RATE = 115200; // Serial terminal baud rate.
 
 /**
  * @brief Initialize the serial output.
  * ==========================================================================*/
 void setupSerial()
 {
-   Serial.begin(serialBaudRate); // Open a serial at specified baud rate. 
+   Serial.begin(SERIAL_BAUD_RATE); // Open a serial at specified baud rate. 
    while(!Serial); // Wait for Serial port to be ready.
 } //setupSerial()
 
