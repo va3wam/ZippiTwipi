@@ -15,12 +15,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus0 - wire() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus0_speed 100000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for MD25 I2C
+#define I2C_BUS0_SPEED 100000 // Define speed of I2C bus 2. Note 400KHz is the upper speed limit for MD25 I2C
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C bus1 - wire1() - constants, classes and global variables 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define I2C_bus1_speed 400000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for ESP32 I2C
+#define I2C_BUS1_SPEED 400000 // Define speed of I2C bus 2. Note 100KHz is the upper speed limit for ESP32 I2C
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief Define I2C device addresses 
@@ -28,7 +28,7 @@
 #define MPU6050_I2C_ADD 0x68 // GY521 I2C address.
 #define leftOLED_I2C_ADD 0x3D // OLED used for robot's left eye I2C adddress.
 #define rightOLED_I2C_ADD 0x3C // OLED used for robot' right eye I2C address.
-#define dcMotorController 0xB0 >> 1 // Wire Library only uses 7 bit addresses so you need to shift address one bit to the right.
+#define md25I2cAddress 0xB0 >> 1 // Wire Library only uses 7 bit addresses. Shift address one bit right (0x58).
 #define LCD16x2 0x3F // Liquid Crystal Display.
 #define PCA9685ServoDriverAllCall 0x70 // Global I2C address for all servo drivers.
 #define PCA9685ServoDriver1 0x40 // I2C address for first servo driver.
@@ -53,7 +53,7 @@ void identifyDevice(int deviceAddress)
     case leftOLED_I2C_ADD:    
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as Left OLED", deviceAddress, deviceAddress);
       break;
-    case dcMotorController:    
+    case md25I2cAddress:    
       motorControllerConnected = true;
       Log.noticeln("<identifyDevice> Device with I2C address %d (%X) identified as MD25 motor controller", deviceAddress, deviceAddress);
       break;
