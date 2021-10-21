@@ -1,11 +1,11 @@
 /******************************************************************************
  * @file main.cpp
  *
- * @mainpage Zippy Twippi firmware. 
+ * @mainpage Zippy Twipi firmware. 
  * 
  * @section intro_sec Introduction
  *
- * This code is the firmware for the two wheeled robot called Zippy Twippi. 
+ * This code is the firmware for the two wheeled robot called Zippy Twipi. 
  * Full details on how to get the circuit and chassis for this robot are found
  * [here](https://github.com/va3wam/ZippiTwipi). 
  *
@@ -68,8 +68,8 @@ void setup()
    Log.begin(LOG_LEVEL_VERBOSE, &Serial, true);
    Log.traceln("<setup> Start of setup.");  
    Log.verboseln("<setup> Initialize I2C buses."); 
-   Wire.begin(I2C_BUS0_SDA, I2C_BUS0_SCL, I2C_bus0_speed); // Init I2C bus0.
-   Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_bus1_speed); // Init I2C bus1.
+   Wire.begin(I2C_BUS0_SDA, I2C_BUS0_SCL, I2C_BUS0_SPEED); // Init I2C bus0.
+   Wire1.begin(I2C_BUS1_SDA, I2C_BUS1_SCL, I2C_BUS1_SPEED); // Init I2C bus1.
    Log.verboseln("<setup> Initialize status RGB LED."); 
    setupStatusLed(); // Configure the status LED on the reset button.
    setStdRgbColour(WHITE); // Indicates that boot up is in progress.
@@ -116,8 +116,7 @@ void setup()
    if(motorControllerConnected == true) // If servo drivers found on I2C bus.
    {
       Log.traceln("<setup> Initialize DC motor driver.");
-      mobilityStatus = true; 
-      initMobility(); // Put servos into starting position. May replace with Doug's stuff. 
+      mobilityStatus = initMobility(); // Initialize drive motors. 
    } // if
    else // If servo drivers found on I2C bus.
    {
