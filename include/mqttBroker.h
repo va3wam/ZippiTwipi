@@ -89,6 +89,11 @@ bool processCmd(String payload)
       Log.noticeln("<processCmd> Recieved test command."); 
       return true;
    }  // if 
+   if(cmd == "RGB")
+   {
+      Log.noticeln("<processCmd> Recieved command to change RGB LED to red = %s, green = %s, blue = %s.", arg[1], arg[2], arg[3]); 
+      return true;
+   }  // if 
 
    Log.warningln("<processCmd> Warning - unrecognized command."); 
    return false;
