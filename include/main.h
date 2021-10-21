@@ -18,7 +18,7 @@
 #include <Wire.h> // Required for I2C communication.
 #include <Adafruit_PWMServoDriver.h> // https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library.
 #include <ArduinoLog.h> // https://github.com/thijse/Arduino-Log.
-#include <LiquidCrystal_I2C.h> //https://github.com/tonykambo/LiquidCrystal_I2C
+#include <LiquidCrystal_I2C.h> // https://github.com/tonykambo/LiquidCrystal_I2C
 /*******************************************************************************
  * @section codeModules Functions put into files according to function.
  * @details Order functions here in a way that ensures that variables get 
