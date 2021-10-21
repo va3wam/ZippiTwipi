@@ -3,9 +3,9 @@
 #define lcd_h // Precompiler macro used for precompiler check.
 
 #include <main.h>
-const uint8_t lcdColumns = 16; // Number of characters that fint on one row of LCD.
-const uint8_t lcdRows = 2; // Number of rows on the LCD unit used for this robot. 
-LiquidCrystal_I2C lcd(LCD16x2, lcdColumns, lcdRows); // Define LCD object.
+const uint8_t lCD_COLUMNS = 16; // Number of characters that fint on one row of LCD.
+const uint8_t lCD_ROWS = 2; // Number of rows on the LCD unit used for this robot. 
+LiquidCrystal_I2C lcd(LCD16x2, lCD_COLUMNS, lCD_ROWS); // Define LCD object.
 
 /**
  * @brief Places a text message centrered horizontally.
@@ -26,14 +26,14 @@ void placeTextHcentre(String msg, int8_t row)
       Log.verboseln("<placeTextHcentre> Row specified is not valid. Will write on row 0.");
       row = 0;
    } // else
-   if(row >= lcdColumns)
+   if(row >= lCD_COLUMNS)
    {
       Log.verboseln("<placeTextHcentre> Message too long to center. Starting in column 0.");
       column = 0;
    }  // if
    else
    {
-      column = (lcdColumns - msg.length()) / 2; 
+      column = (lCD_COLUMNS - msg.length()) / 2; 
       Log.verboseln("<placeTextHcentre> To centre message <%s> start in column %d.", msg.c_str(), column);
    }  // else
    lcd.setCursor(column, row);
