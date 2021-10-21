@@ -22,9 +22,9 @@
  *                   respectively 
  * 2021-01-10 va3wam Program created
  ***************************************************************************************************/
-#include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
-#include <Wire.h> // Required for serial I2C communication. Comes with Platform.io
-#include <amI2C.h> // Required for I2C address of MD25
+//#include <Arduino.h> // Arduino Core for ESP32. Comes with Platform.io
+//#include <Wire.h> // Required for serial I2C communication. Comes with Platform.io
+//#include <amI2C.h> // Required for I2C address of MD25
 #include <amMD25.h> // Header file for linking. 
 
 /**
@@ -41,10 +41,10 @@ amMD25::amMD25()
 byte amMD25::getFirmwareVersion()
 {                                               
 //  Serial.println("<amMD25::getFirmwareVersion> Retrieving firmware version from MD25");
-  Wire.beginTransmission(MD25ADDRESS); // Request token to transmit on I2C bus
+  Wire.beginTransmission(md25I2cAddress); // Request token to transmit on I2C bus
   Wire.write(MD25RegSoftwareRev); // Send byte to read software version as a single byte
   Wire.endTransmission(); // End request for token
-  Wire.requestFrom(MD25ADDRESS, 1); // Request 1 byte from MD25 address register
+  Wire.requestFrom(md25I2cAddress, 1); // Request 1 byte from MD25 address register
   while(Wire.available() < 1); // Wait for reply to request for address to arrive
   byte software = Wire.read(); // Read it in
   return(software); // Return address to 
@@ -58,8 +58,8 @@ byte amMD25::getFirmwareVersion()
 ===================================================================================================*/
 void amMD25::cfgToConsole()
 {
-   Serial.println("<amResetButton::cfgToConsole> MD25 motor controller settings:");  
-   Serial.print("<amResetButton::cfgToConsole> ... Motor controller firmware version  = "); Serial.println(getFirmwareVersion());
+   Serial.println("<amMD25::cfgToConsole> MD25 motor controller settings:");  
+   Serial.print("<amMD25::cfgToConsole> ... Motor controller firmware version  = "); Serial.println(getFirmwareVersion());
 } //amMD25::cfgToConsole()
 
 /** 
@@ -67,7 +67,7 @@ void amMD25::cfgToConsole()
 =================================================================================================== */
 void amMD25::encoderReset()
 {                                       
-  Wire.beginTransmission(MD25ADDRESS); // Start conversation with motor controller
+  Wire.beginTransmission(md25I2cAddress); // Start conversation with motor controller
   Wire.write(MD25RegCmd); // Set up command register
   Wire.write(MD25CmdResetEncoders); // Send command to reset motor encoders
   Wire.endTransmission(); 
@@ -78,11 +78,11 @@ void amMD25::encoderReset()
 =================================================================================================== */
 long amMD25::getEncoder1()
 {                                            
-  Wire.beginTransmission(MD25ADDRESS); // Send byte to get a reading from encoder 1
+  Wire.beginTransmission(md25I2cAddress); // Send byte to get a reading from encoder 1
   Wire.write(MD25RegEncoder1a);
   Wire.endTransmission();
   
-  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
+  Wire.requestFrom(md25I2cAddress, 4); // Request 4 bytes from MD25
   while(Wire.available() < 4); // Wait for 4 bytes to arrive
   long poss1 = Wire.read(); // First byte for encoder 1, HH.
   poss1 <<= 8;
@@ -101,11 +101,11 @@ long amMD25::getEncoder1()
 =================================================================================================== */
 long amMD25::getEncoder2()
 {                                            
-  Wire.beginTransmission(MD25ADDRESS);           
+  Wire.beginTransmission(md25I2cAddress);           
   Wire.write(MD25RegEncoder2a);
   Wire.endTransmission();
   
-  Wire.requestFrom(MD25ADDRESS, 4); // Request 4 bytes from MD25
+  Wire.requestFrom(md25I2cAddress, 4); // Request 4 bytes from MD25
   while(Wire.available() < 4); // Wait for 4 bytes to become available
   long poss2 = Wire.read();
   poss2 <<= 8;
@@ -128,23 +128,23 @@ void amMD25::stopMotor(int motorNumber)
   switch(motorNumber)
   {
       case 0: // Left motor 
-         Wire.beginTransmission(MD25ADDRESS);
+         Wire.beginTransmission(md25I2cAddress);
          Wire.write(MD25RegSpeed2);
          Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
          Wire.endTransmission();
          break;
       case 1: // Right motor
-         Wire.beginTransmission(MD25ADDRESS);
+         Wire.beginTransmission(md25I2cAddress);
          Wire.write(MD25RegSpeed1);
          Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
          Wire.endTransmission();
          break;
       default: // Both motors
-         Wire.beginTransmission(MD25ADDRESS);
+         Wire.beginTransmission(md25I2cAddress);
          Wire.write(MD25RegSpeed2);
          Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
          Wire.endTransmission();
-         Wire.beginTransmission(MD25ADDRESS);
+         Wire.beginTransmission(md25I2cAddress);
          Wire.write(MD25RegSpeed1);
          Wire.write(128); // Sends a value of 128 to motor 2 this value stops the motor
          Wire.endTransmission();
@@ -164,36 +164,36 @@ void amMD25::spinMotor(int motorNumber, int speed)
   {
       case 0: // Left motor 
          Serial.println("<amMD25::spinMotor> Spin left motor");
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegMode); // Going to write to the mode register
          Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
          Wire.endTransmission(); // End transmit
    //      delay(1); // Give bus a breather
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
          Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
          Wire.endTransmission(); // End transmit
          break;
       case 1: // Right motor 
          Serial.println("<amMD25::spinMotor> Spin right motor");
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegMode); // Going to write to the mode register
          Wire.write(0); // Writing 0 sets speed controls to 0 (Full Reverse), 128 (Stop), 255 (Full Forward)
          Wire.endTransmission(); // End transmit
    //      delay(1); // Give bus a breather
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegSpeed2); // Indicate motor1 speed register
          Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
          Wire.endTransmission(); // End transmit
          break;
       default: // Both motors
          Serial.println("<amMD25::spinMotor> Spin both motors");
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegMode); // Going to write to the mode register
          Wire.write(2); // Writing 2 to the mode register will make speed1 control both motors speed
          Wire.endTransmission(); // End transmit
    //      delay(1); // Give bus a breather
-         Wire.beginTransmission(MD25ADDRESS); // Request start transmit to the MD25 H-bridge
+         Wire.beginTransmission(md25I2cAddress); // Request start transmit to the MD25 H-bridge
          Wire.write(MD25RegSpeed1); // Indicate motor1 speed register
          Wire.write(speed); // 1-127 = backwards, 128 = stop, 129-255 = forward                                           
          Wire.endTransmission(); // End transmit
